@@ -235,6 +235,9 @@ include 'header.php';
                             $subtotal = $displayPrice * intval($item['quantity']);
                             $imageUrl = $item['image_url'] !== '' ? '../' . ltrim($item['image_url'], '/') : '';
                             $variantLabel = trim(($item['variant_size'] !== '' ? $item['variant_size'] . '吋' : '') . (($item['variant_color'] !== '' && $item['variant_size'] !== '') ? ' / ' : '') . ($item['variant_color'] !== '' ? $item['variant_color'] : ''));
+                            if ($variantLabel === '') {
+                                $variantLabel = '標準款';
+                            }
                             
                             // 💡 判斷如果是剛才「直接下單」的商品，就把它設為 checked 狀態
                             $isChecked = ($buyNowItem > 0 && $buyNowItem === intval($item['cart_item_id'])) ? 'checked' : '';
@@ -253,10 +256,7 @@ include 'header.php';
                                 <td style="padding:14px 12px;">
                                     <div style="font-weight:700; margin-bottom:6px; color:#222;"><?php echo htmlspecialchars($item['product_name']); ?></div>
                                     <div style="font-size:13px; color:#777; line-height:1.7;">
-                                        <?php if ($variantLabel !== ''): ?>
-                                            <div>規格：<?php echo htmlspecialchars($variantLabel); ?></div>
-                                        <?php endif; ?>
-                                        <div>SKU：<?php echo htmlspecialchars($item['sku_code'] !== '' ? $item['sku_code'] : '-'); ?></div>
+                                        <div>規格：<?php echo htmlspecialchars($variantLabel); ?></div>
                                         <div style="<?php echo $item['stock_warning'] ? 'color:#b91c1c;font-weight:700;' : ''; ?>">庫存：<?php echo intval($item['variant_stock']); ?><?php echo $item['stock_warning'] ? '，請調整數量' : ''; ?></div>
                                         <div>加入時間：<?php echo htmlspecialchars($item['created_at']); ?></div>
                                     </div>

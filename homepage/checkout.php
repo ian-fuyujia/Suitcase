@@ -817,6 +817,9 @@ include 'header.php';
                                 <?php
                                 $imageUrl = $item['image_url'] !== '' ? '../' . ltrim($item['image_url'], '/') : '';
                                 $variantLabel = trim(($item['variant_size'] !== '' ? $item['variant_size'] . '吋' : '') . (($item['variant_color'] !== '' && $item['variant_size'] !== '') ? ' / ' : '') . ($item['variant_color'] !== '' ? $item['variant_color'] : ''));
+                                if ($variantLabel === '') {
+                                    $variantLabel = '標準款';
+                                }
                                 ?>
                                 <tr style="border-bottom:1px solid #f3f3f3; vertical-align:top;">
                                     <td style="padding:14px 12px;">
@@ -829,10 +832,7 @@ include 'header.php';
                                     <td style="padding:14px 12px;">
                                         <div style="font-weight:700; margin-bottom:6px; color:#222;"><?php echo htmlspecialchars($item['product_name']); ?></div>
                                         <div style="font-size:13px; color:#777; line-height:1.7;">
-                                            <?php if ($variantLabel !== ''): ?>
-                                                <div>規格：<?php echo htmlspecialchars($variantLabel); ?></div>
-                                            <?php endif; ?>
-                                            <div>SKU：<?php echo htmlspecialchars($item['sku_code'] !== '' ? $item['sku_code'] : '-'); ?></div>
+                                            <div>規格：<?php echo htmlspecialchars($variantLabel); ?></div>
                                         </div>
                                     </td>
                                     <td style="padding:14px 12px; font-weight:700;">NT$ <?php echo number_format(floatval($item['display_price'])); ?></td>

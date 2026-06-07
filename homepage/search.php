@@ -147,7 +147,7 @@ include 'header.php';
     <form method="GET" action="search.php" style="background:#fff; border:1px solid #eee; border-radius:12px; padding:18px; margin-bottom:28px; display:grid; grid-template-columns:2fr 1fr 1fr 1fr 1fr auto; gap:12px; align-items:end;">
         <div>
             <label style="display:block; font-size:13px; font-weight:700; margin-bottom:6px;">關鍵字</label>
-            <input type="search" name="q" value="<?php echo searchH($q); ?>" placeholder="商品名稱、特色或 SKU" style="width:100%; height:42px; padding:0 12px; border:1px solid #ddd; border-radius:8px;">
+            <input type="search" name="q" value="<?php echo searchH($q); ?>" placeholder="商品名稱、特色或規格" style="width:100%; height:42px; padding:0 12px; border:1px solid #ddd; border-radius:8px;">
         </div>
         <div>
             <label style="display:block; font-size:13px; font-weight:700; margin-bottom:6px;">分類</label>

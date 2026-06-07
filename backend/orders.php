@@ -232,19 +232,20 @@ if ($orderResult) {
     .om-empty { padding: 22px 0; text-align: center; color: #94a3b8; }
     .om-detail-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
     body.om-drawer-open { overflow:hidden; }
-    body.om-drawer-enhanced .om-drawer-backdrop {
+    body.om-drawer-open .om-drawer-backdrop {
         display:block;
         position:fixed;
         inset:0;
         background:rgba(15,23,42,0.42);
-        z-index:1900;
+        z-index:9998;
+        cursor:pointer;
     }
     body.om-drawer-enhanced .om-detail-card.om-detail-drawer {
         position:fixed;
         top:0;
         right:0;
         bottom:0;
-        z-index:1901;
+        z-index:9999;
         width:min(820px, 100vw);
         max-height:100vh;
         overflow:auto;
@@ -686,14 +687,17 @@ if ($orderResult) {
         document.body.classList.add('om-drawer-enhanced', 'om-drawer-open');
         orderDrawer.classList.add('is-open');
         orderBackdrop.hidden = false;
+        orderBackdrop.style.display = 'block';
 
         const closeDrawer = (event) => {
             if (event) {
                 event.preventDefault();
+                event.stopPropagation();
             }
             orderDrawer.classList.remove('is-open');
-            document.body.classList.remove('om-drawer-open');
+            document.body.classList.remove('om-drawer-open', 'om-drawer-enhanced');
             orderBackdrop.hidden = true;
+            orderBackdrop.style.display = 'none';
             if (closeDrawerLink && window.history && window.history.replaceState) {
                 window.history.replaceState(null, '', closeDrawerLink.href);
             }
@@ -703,6 +707,15 @@ if ($orderResult) {
         if (closeDrawerLink) {
             closeDrawerLink.addEventListener('click', closeDrawer);
         }
+        document.addEventListener('click', (event) => {
+            if (!document.body.classList.contains('om-drawer-open')) {
+                return;
+            }
+            if (orderDrawer.contains(event.target)) {
+                return;
+            }
+            closeDrawer(event);
+        }, true);
         document.addEventListener('keydown', (event) => {
             if (event.key === 'Escape') {
                 closeDrawer(event);
