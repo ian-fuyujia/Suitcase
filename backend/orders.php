@@ -22,6 +22,17 @@ function orderStatusLabel($status) {
     return $labels[$status] ?? $status;
 }
 
+function returnStatusMeta($status) {
+    $status = strtoupper((string)$status);
+    $map = [
+        'PENDING' => ['label' => '待審核', 'class' => 'return-pending', 'hint' => '請確認訂單、商品與退貨原因後，選擇核准或拒絕。'],
+        'APPROVED' => ['label' => '已核准', 'class' => 'return-approved', 'hint' => '已核准退貨，等待商品確認或後續退款處理。'],
+        'REJECTED' => ['label' => '已拒絕', 'class' => 'return-rejected', 'hint' => '退貨已拒絕，請在審核備註說明原因。'],
+        'REFUNDED' => ['label' => '已退款', 'class' => 'return-refunded', 'hint' => '已建立退款紀錄；重複送出不應再次建立退款交易。'],
+    ];
+    return $map[$status] ?? ['label' => $status, 'class' => 'return-pending', 'hint' => '請確認此退貨狀態是否需要後續處理。'];
+}
+
 function buildFilterQuery(array $overrides = []) {
     $base = [
         'page' => 'orders',
@@ -142,10 +153,30 @@ if ($orderResult) {
     .pm-status-delivered { background: #ede9fe; color: #6d28d9; }
     .pm-status-completed { background: #dcfce7; color: #166534; }
     .pm-status-cancelled { background: #fee2e2; color: #991b1b; }
+    .return-pending { background:#fef3c7; color:#92400e; }
+    .return-approved { background:#dbeafe; color:#1d4ed8; }
+    .return-rejected { background:#fee2e2; color:#991b1b; }
+    .return-refunded { background:#dcfce7; color:#166534; }
+    .return-help { margin:10px 0 0; color:#64748b; font-size:13px; line-height:1.6; }
     .om-empty { padding: 22px 0; text-align: center; color: #94a3b8; }
     .om-detail-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
     @media (max-width: 980px) {
         .om-detail-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 720px) {
+        .om-table-actions,
+        .om-bulk-left,
+        .om-detail-actions {
+            align-items: stretch;
+            flex-direction: column;
+        }
+        #bulkOrdersForm,
+        #deleteOrderForm {
+            display: grid !important;
+            gap: 10px;
+            align-items: stretch !important;
+        }
+        #delete_older_days { max-width: none !important; }
     }
 </style>
 
@@ -421,11 +452,12 @@ if ($orderResult) {
                 </div>
 
                 <?php if ($returnRequest): ?>
+                    <?php $returnMeta = returnStatusMeta($returnRequest['status'] ?? ''); ?>
                     <div style="margin-top:18px; padding:16px; border:1px solid #e2e8f0; border-radius:12px; background:#f8fafc;">
                         <h3 class="om-section-title">退貨申請審核</h3>
                         <dl class="om-kv">
                             <dt>申請人</dt><dd><?php echo h(($returnRequest['requester_name'] ?? '') ?: ($returnRequest['requester_email'] ?? '-')); ?></dd>
-                            <dt>目前狀態</dt><dd><?php echo h($returnRequest['status']); ?></dd>
+                            <dt>目前狀態</dt><dd><span class="pm-badge <?php echo h($returnMeta['class']); ?>"><?php echo h($returnMeta['label']); ?></span></dd>
                             <dt>申請時間</dt><dd><?php echo h($returnRequest['created_at']); ?></dd>
                             <dt>退貨原因</dt><dd><?php echo nl2br(h($returnRequest['reason'])); ?></dd>
                             <?php if (!empty($returnRequest['admin_note'])): ?>
@@ -442,9 +474,11 @@ if ($orderResult) {
                                     <label for="return_status">退貨狀態</label>
                                     <select class="pm-select" id="return_status" name="return_status">
                                         <?php foreach (['PENDING', 'APPROVED', 'REJECTED', 'REFUNDED'] as $returnStatus): ?>
-                                            <option value="<?php echo h($returnStatus); ?>" <?php echo $returnRequest['status'] === $returnStatus ? 'selected' : ''; ?>><?php echo h($returnStatus); ?></option>
+                                            <?php $optionMeta = returnStatusMeta($returnStatus); ?>
+                                            <option value="<?php echo h($returnStatus); ?>" <?php echo $returnRequest['status'] === $returnStatus ? 'selected' : ''; ?>><?php echo h($optionMeta['label']); ?></option>
                                         <?php endforeach; ?>
                                     </select>
+                                    <p class="return-help"><?php echo h($returnMeta['hint']); ?></p>
                                 </div>
                                 <div class="pm-col-9">
                                     <label for="return_admin_note">審核備註</label>

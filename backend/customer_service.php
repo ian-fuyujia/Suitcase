@@ -164,6 +164,37 @@ for ($i = 0; $i < $messageCount; $i++) {
     .cs-form-input, .cs-form-select { width: 100%; border: 1px solid var(--cs-border); border-radius: 10px; padding: 12px; font-size: 15px; font-family: inherit; background: #fff; box-sizing: border-box; }
     .cs-form-input:focus, .cs-form-select:focus { outline: none; border-color: var(--cs-brand); box-shadow: 0 0 0 3px rgba(219,107,107,0.1); }
     .cs-modal-actions { margin-top: 32px; display: flex; justify-content: flex-end; gap: 12px; }
+    @media (max-width: 820px) {
+        .cs-container {
+            grid-template-columns: 1fr;
+            height: auto;
+            min-height: 0;
+        }
+        .cs-sidebar { max-height: 320px; }
+        .cs-main { min-height: 560px; }
+        .cs-main-header,
+        .cs-input-area {
+            align-items: stretch;
+            flex-direction: column;
+        }
+        .btn-submit-reply { width: 100%; }
+        .msg-content-wrapper { max-width: 100%; min-width: 0; }
+        .msg-row,
+        .msg-row.admin {
+            align-items: stretch;
+            flex-direction: column;
+        }
+        .msg-row.admin .msg-content-wrapper,
+        .msg-row.admin .msg-aside {
+            align-items: flex-start;
+        }
+        .cs-modal {
+            width: min(92vw, 600px);
+            max-height: 88vh;
+            overflow: auto;
+            padding: 22px;
+        }
+    }
 </style>
 
 <div>

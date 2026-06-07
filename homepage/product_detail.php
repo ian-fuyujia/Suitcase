@@ -725,6 +725,7 @@ if (tableExists($conn, 'product_qa')) {
 $productReviews = [];
 $reviewSummary = ['avg_rating' => 0, 'review_count' => 0];
 $canReview = false;
+$hasExistingReview = false;
 $reviewOrderId = 0;
 if (tableExists($conn, 'product_reviews')) {
     $summaryStmt = $conn->prepare(
@@ -783,6 +784,16 @@ if (tableExists($conn, 'product_reviews')) {
                 $reviewOrderId = (int)$eligibilityRow['order_id'];
             }
             $eligibilityStmt->close();
+        }
+
+        $existingReviewStmt = $conn->prepare(
+            'SELECT review_id FROM product_reviews WHERE product_id = ? AND user_id = ? LIMIT 1'
+        );
+        if ($existingReviewStmt) {
+            $existingReviewStmt->bind_param('ii', $id, $reviewUserId);
+            $existingReviewStmt->execute();
+            $hasExistingReview = (bool)$existingReviewStmt->get_result()->fetch_assoc();
+            $existingReviewStmt->close();
         }
     }
 }
@@ -1036,12 +1047,14 @@ include 'header.php';
 
                 <div class="review-form-panel">
                     <h3>撰寫評論</h3>
+                    <p class="review-guidance">評論資格會依登入狀態與已完成/已送達訂單檢查，送出後會立即更新商品評論。</p>
                     <?php if (empty($_SESSION['user_id'])): ?>
                         <p>登入後，完成訂單即可評論商品。</p>
                         <a class="detail-btn" href="login.php">登入會員</a>
                     <?php elseif (!$canReview): ?>
                         <p>只有已送達或已完成訂單的會員可以評論此商品。</p>
                     <?php else: ?>
+                        <p class="review-guidance"><?php echo $hasExistingReview ? '你已評論過此商品，再次送出會更新原本的評分與內容。' : '你已符合評論資格，送出後會顯示在商品評論區。'; ?></p>
                         <form method="post" class="review-form">
                             <?php echo apCsrfField(); ?>
                             <input type="hidden" name="action" value="submit_review">

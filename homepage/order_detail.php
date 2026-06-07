@@ -25,6 +25,17 @@ $orderStatusLabels = [
     'CANCELLED' => '已取消',
 ];
 
+function odReturnStatusMeta($status) {
+    $status = strtoupper((string)$status);
+    $map = [
+        'PENDING' => ['label' => '待客服審核', 'class' => 'pending', 'hint' => '我們已收到退貨申請，客服會在後台確認訂單與商品狀態。'],
+        'APPROVED' => ['label' => '已核准退貨', 'class' => 'approved', 'hint' => '退貨申請已核准，請依客服通知保留商品與外箱。'],
+        'REJECTED' => ['label' => '退貨未通過', 'class' => 'rejected', 'hint' => '此申請未通過，請查看審核備註或聯繫客服。'],
+        'REFUNDED' => ['label' => '已完成退款', 'class' => 'refunded', 'hint' => '後台已完成退款紀錄，此退貨流程已結案。'],
+    ];
+    return $map[$status] ?? ['label' => $status, 'class' => 'pending', 'hint' => '退貨申請狀態已更新，請留意客服備註。'];
+}
+
 if ($orderNumber === '') {
     header('Location: profile.php#order-history');
     exit;
@@ -166,6 +177,18 @@ if ($order && odTableExists($conn, 'return_requests')) {
 include 'header.php';
 ?>
 
+<style>
+    .return-status-badge { display:inline-flex; align-items:center; padding:5px 10px; border-radius:999px; font-size:13px; font-weight:800; }
+    .return-status-badge.pending { background:#fef3c7; color:#92400e; }
+    .return-status-badge.approved { background:#dbeafe; color:#1d4ed8; }
+    .return-status-badge.rejected { background:#fee2e2; color:#991b1b; }
+    .return-status-badge.refunded { background:#dcfce7; color:#166534; }
+    .return-hint { margin:8px 0 0; color:#666; font-size:14px; }
+    @media (max-width: 720px) {
+        .order-detail-grid { grid-template-columns:1fr !important; }
+    }
+</style>
+
 <section style="padding:190px 5% 60px; max-width:1100px; margin:0 auto;">
     <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:16px; flex-wrap:wrap; margin-bottom:20px;">
         <div>
@@ -180,7 +203,7 @@ include 'header.php';
             找不到對應的訂單資料。
         </div>
     <?php else: ?>
-        <div style="display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:14px; margin-bottom:22px;">
+        <div class="order-detail-grid" style="display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:14px; margin-bottom:22px;">
             <div style="padding:16px; border-radius:12px; background:#fff; border:1px solid #eee;">
                 <div style="font-size:13px; color:#666; margin-bottom:6px;">訂單編號</div>
                 <div style="font-size:22px; font-weight:800; color:#222;"><?php echo htmlspecialchars($order['order_number']); ?></div>
@@ -238,8 +261,10 @@ include 'header.php';
                 <?php endif; ?>
 
                 <?php if ($returnRequest): ?>
+                    <?php $returnMeta = odReturnStatusMeta($returnRequest['status'] ?? ''); ?>
                     <div style="display:grid; gap:8px;">
-                        <div><strong>申請狀態：</strong><?php echo htmlspecialchars($returnRequest['status']); ?></div>
+                        <div><strong>申請狀態：</strong><span class="return-status-badge <?php echo htmlspecialchars($returnMeta['class']); ?>"><?php echo htmlspecialchars($returnMeta['label']); ?></span></div>
+                        <p class="return-hint"><?php echo htmlspecialchars($returnMeta['hint']); ?></p>
                         <div><strong>申請時間：</strong><?php echo htmlspecialchars($returnRequest['created_at']); ?></div>
                         <div><strong>退貨原因：</strong><?php echo nl2br(htmlspecialchars($returnRequest['reason'])); ?></div>
                         <?php if (!empty($returnRequest['admin_note'])): ?>

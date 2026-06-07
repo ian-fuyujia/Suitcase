@@ -237,6 +237,14 @@ $pointRows = sysFetchRows($conn, "
     @media (max-width: 1000px) {
         .sys-layout, .ops-grid { grid-template-columns: 1fr; }
     }
+    @media (max-width: 720px) {
+        .sys-card { padding: 16px; overflow-x: auto; }
+        .sys-table { min-width: 640px; }
+        .inline-form { align-items: stretch; flex-direction: column; }
+        .inline-form select, .inline-form button { width: 100%; }
+        .ops-card { padding: 14px; }
+        .ops-table { min-width: 560px; }
+    }
 </style>
 
 <h1 style="font-size:24px; margin-top:0; margin-bottom:4px;">⚙️ 系統與權限管理</h1>

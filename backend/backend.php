@@ -163,6 +163,56 @@ if ($admin_role_id === 3) {
         button { padding:12px 18px; border:none; background:#2c3e50; color:#fff; border-radius:6px; cursor:pointer; font-weight:700; }
         button.alt { background: var(--primary); }
         button:hover { opacity: 0.9; }
+        @media (max-width: 760px) {
+            html,
+            body {
+                max-width: 100vw;
+            }
+            body { overflow-x: hidden; }
+            .app { display: block; max-width: 100vw; overflow-x: hidden; }
+            .sidebar,
+            .sidebar.collapsed {
+                width: auto;
+                padding: 14px 12px;
+                overflow: hidden;
+            }
+            .brand-row { margin-bottom: 10px; }
+            .sidebar.collapsed .brand,
+            .sidebar.collapsed .admin-box {
+                display: block;
+            }
+            .menu {
+                display: flex;
+                gap: 8px;
+                width: 100%;
+                max-width: 100%;
+                flex-wrap: wrap;
+                overflow: hidden;
+            }
+            .menu li { flex: 1 1 150px; margin: 0; min-width: 0; }
+            .menu a { padding: 10px 12px; white-space: normal; }
+            .sidebar.collapsed .menu a .text {
+                opacity: 1;
+                width: auto;
+                pointer-events: auto;
+            }
+            .main { padding: 16px 12px; }
+            .card { padding: 18px; }
+            .main,
+            .pm-wrap,
+            .pm-card,
+            .pm-table-wrap {
+                max-width: 100%;
+                min-width: 0;
+                box-sizing: border-box;
+            }
+            .pm-table-wrap {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            .toggle-btn { display: none; }
+            input, select, textarea, button { max-width: 100%; }
+        }
     </style>
 </head>
 <body>
