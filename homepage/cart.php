@@ -205,6 +205,10 @@ include 'header.php';
         <div style="margin-bottom:16px; padding:12px 14px; border-radius:10px; background:#fef2f2; color:#991b1b; border:1px solid #fca5a5;">部分商品數量超過庫存，已保留原數量，請調整後再結帳。</div>
     <?php endif; ?>
 
+    <?php if ($notice === 'no_selection'): ?>
+        <div style="margin-bottom:16px; padding:12px 14px; border-radius:10px; background:#fff7ed; color:#9a3412; border:1px solid #fdba74;">請至少勾選一項商品後再前往結帳。</div>
+    <?php endif; ?>
+
     <?php if (!cartTableExists($conn, 'cart_items')): ?>
         <div style="background:#fff; border:1px solid #eee; border-radius:14px; padding:32px; text-align:center; color:#777;">目前資料庫尚未建立 `cart_items`，請先執行同步腳本。</div>
     <?php elseif (empty($items)): ?>
@@ -277,7 +281,8 @@ include 'header.php';
 
             <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; margin-top:18px;">
                 <div style="font-size:18px; font-weight:700; color:#222;">已勾選商品總額：NT$ <span id="selectedTotal">0</span></div>
-                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                    <div id="cartSelectionNotice" style="display:none; width:100%; padding:10px 12px; border-radius:10px; background:#fff7ed; color:#9a3412; border:1px solid #fdba74; font-size:14px;">請至少勾選一項商品後再前往結帳。</div>
                     <button type="submit" name="action" value="update_cart" style="padding:12px 18px; border:none; border-radius:999px; background:#111; color:#fff; font-weight:700; cursor:pointer;">更新購物車</button>
                     <button type="submit" name="action" value="checkout" formaction="checkout.php" formmethod="post" style="padding:12px 18px; border:none; border-radius:999px; background:#db6b6b; color:#fff; font-weight:700; cursor:pointer;">前往結帳</button>
                 </div>
@@ -293,6 +298,7 @@ include 'header.php';
 
     const rows = Array.from(form.querySelectorAll('[data-cart-row]'));
     const selectedTotalEl = document.getElementById('selectedTotal');
+    const selectionNotice = document.getElementById('cartSelectionNotice');
 
     function formatMoney(value) {
         return new Intl.NumberFormat('zh-TW').format(value);
@@ -348,6 +354,27 @@ include 'header.php';
         if (qtyInput) {
             qtyInput.addEventListener('input', recalc);
             qtyInput.addEventListener('change', recalc);
+        }
+    });
+
+    form.addEventListener('submit', (event) => {
+        const submitter = event.submitter;
+        const isCheckout = submitter && submitter.name === 'action' && submitter.value === 'checkout';
+        if (!isCheckout) {
+            return;
+        }
+        const hasSelected = rows.some((row) => {
+            const checkbox = row.querySelector('[data-cart-checkbox]');
+            return checkbox && checkbox.checked;
+        });
+        if (!hasSelected) {
+            event.preventDefault();
+            if (selectionNotice) {
+                selectionNotice.style.display = 'block';
+                selectionNotice.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } else {
+                alert('請至少勾選一項商品後再前往結帳。');
+            }
         }
     });
 

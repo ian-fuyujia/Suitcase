@@ -145,6 +145,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['selected']) && is_arr
     }
 }
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'checkout' && empty($selectedIds)) {
+    header('Location: cart.php?notice=no_selection');
+    exit;
+}
+
 $postedQuantities = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['quantities']) && is_array($_POST['quantities'])) {
     foreach ($_POST['quantities'] as $cartItemId => $quantity) {

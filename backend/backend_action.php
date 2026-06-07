@@ -41,6 +41,8 @@ if ($requestedAction === 'submit_supplier_supply') {
     $csrfReturnPage = 'backend.php?page=orders';
 } elseif ($requestedAction === 'update_member') {
     $csrfReturnPage = 'backend.php?page=members';
+} elseif (in_array($requestedAction, ['add_product_qa', 'update_product_qa', 'toggle_product_qa'], true)) {
+    $csrfReturnPage = 'backend.php?page=customer_service';
 }
 
 apRequireCsrf($csrfReturnPage);
@@ -77,7 +79,7 @@ function backendActionAllowedForRole($action, $roleId) {
     }
 
     $roleActions = [
-        2 => ['reply_ticket_message', 'add_product_qa'],
+        2 => ['reply_ticket_message', 'add_product_qa', 'update_product_qa', 'toggle_product_qa'],
         3 => ['submit_supplier_supply'],
     ];
 

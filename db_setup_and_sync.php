@@ -439,6 +439,7 @@ $sql_product_qa = "CREATE TABLE IF NOT EXISTS `product_qa` (
     `question` TEXT NOT NULL,
     `answer` TEXT NOT NULL,
     `qa_type` ENUM('GENERAL','PRODUCT') NOT NULL DEFAULT 'PRODUCT',
+    `is_active` TINYINT(1) NOT NULL DEFAULT 1,
     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX `idx_product_qa_product_id` (`product_id`),
@@ -457,6 +458,9 @@ if (!columnExists($conn, 'product_qa', 'answer')) {
 }
 if (!columnExists($conn, 'product_qa', 'qa_type')) {
     $conn->query("ALTER TABLE `product_qa` ADD COLUMN `qa_type` ENUM('GENERAL','PRODUCT') NOT NULL DEFAULT 'PRODUCT' AFTER `answer`");
+}
+if (!columnExists($conn, 'product_qa', 'is_active')) {
+    $conn->query("ALTER TABLE `product_qa` ADD COLUMN `is_active` TINYINT(1) NOT NULL DEFAULT 1 AFTER `qa_type`");
 }
 
 $sql_user_notifications = "CREATE TABLE IF NOT EXISTS `user_notifications` (

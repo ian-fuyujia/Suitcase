@@ -738,11 +738,14 @@ if (tableExists($conn, 'product_category_links')) {
 
 $productFaqs = [];
 if (tableExists($conn, 'product_qa')) {
+    $qaColumns = tableColumns($conn, 'product_qa');
+    $faqActiveFilter = in_array('is_active', $qaColumns, true) ? 'AND is_active = 1' : '';
     $faqSql = "SELECT question, answer, qa_type, product_id
                FROM product_qa
-               WHERE qa_type = 'GENERAL'
+               WHERE (qa_type = 'GENERAL'
                   OR product_id IS NULL
-                  OR product_id = {$id}
+                  OR product_id = {$id})
+                 {$faqActiveFilter}
                ORDER BY CASE WHEN product_id = {$id} THEN 0 ELSE 1 END, created_at DESC, qa_id DESC";
     $faqRes = safeQuery($conn, $faqSql, 'productFaqs');
     if ($faqRes) {
