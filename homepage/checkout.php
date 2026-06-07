@@ -159,6 +159,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['quantities']) && is_a
 
 $items = [];
 $totalAmount = 0;
+$checkoutStockErrors = [];
 if (checkoutTableExists($conn, 'cart_items') && !empty($selectedIds)) {
     $idList = implode(',', array_map('intval', $selectedIds));
     $imageOrder = 'pi.is_main DESC, pi.sort_order ASC, pi.image_id ASC';
@@ -222,9 +223,18 @@ foreach ($items as &$item) {
     $item['display_price'] = $displayPrice;
     $item['price_label'] = $priceInfo['headline_label'];
     $item['subtotal'] = $displayPrice * intval($item['quantity']);
+    $item['stock_available'] = isset($item['stock_available']) ? intval($item['stock_available']) : 0;
+    if (intval($item['quantity']) > $item['stock_available']) {
+        $checkoutStockErrors[] = $cartItemId;
+    }
     $totalAmount += $item['subtotal'];
 }
 unset($item);
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'checkout' && !empty($checkoutStockErrors)) {
+    header('Location: cart.php?notice=stock_limited');
+    exit;
+}
 
 $availableCoupons = [];
 if (checkoutTableExists($conn, 'coupon_distributions') && checkoutTableExists($conn, 'coupons')) {
@@ -285,6 +295,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
     if (empty($items)) {
         $errors[] = '請先選擇購物車中的商品。';
+    }
+
+    if (!empty($checkoutStockErrors)) {
+        $errors[] = '部分商品庫存不足，請返回購物車調整數量。';
     }
 
     $cardDigits = preg_replace('/\D+/', '', $formCardNumber);

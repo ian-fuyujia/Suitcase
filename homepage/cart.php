@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 $pageTitle = '購物車 | All Pass';
 $activeNav = '';
 
@@ -246,7 +246,7 @@ include 'header.php';
                             // 💡 判斷如果是剛才「直接下單」的商品，就把它設為 checked 狀態
                             $isChecked = ($buyNowItem > 0 && $buyNowItem === intval($item['cart_item_id'])) ? 'checked' : '';
                             ?>
-                            <tr style="border-bottom:1px solid #f3f3f3; vertical-align:top;" data-cart-row data-cart-item-id="<?php echo intval($item['cart_item_id']); ?>">
+                            <tr style="border-bottom:1px solid #f3f3f3; vertical-align:top;" data-cart-row data-cart-item-id="<?php echo intval($item['cart_item_id']); ?>" data-stock-warning="<?php echo $item['stock_warning'] ? '1' : '0'; ?>">
                                 <td style="padding:14px 12px; text-align:center;">
                                     <input type="checkbox" name="selected[]" value="<?php echo intval($item['cart_item_id']); ?>" <?php echo $isChecked; ?> style="width:18px; height:18px;" data-cart-checkbox>
                                 </td>
@@ -267,7 +267,7 @@ include 'header.php';
                                 </td>
                                 <td style="padding:14px 12px; font-weight:700;">NT$ <?php echo number_format($displayPrice); ?></td>
                                 <td style="padding:14px 12px;">
-                                    <input type="number" name="quantities[<?php echo intval($item['cart_item_id']); ?>]" value="<?php echo intval($item['quantity']); ?>" min="1" max="<?php echo max(1, intval($item['variant_stock'])); ?>" style="width:100px; height:40px; border:1px solid #ddd; border-radius:8px; padding:0 10px;" data-cart-qty data-unit-price="<?php echo htmlspecialchars((string)$displayPrice); ?>">
+                                    <input type="number" name="quantities[<?php echo intval($item['cart_item_id']); ?>]" value="<?php echo intval($item['quantity']); ?>" min="1" max="<?php echo max(1, intval($item['variant_stock'])); ?>" style="width:100px; height:40px; border:1px solid #ddd; border-radius:8px; padding:0 10px;" data-cart-qty data-unit-price="<?php echo htmlspecialchars((string)$displayPrice); ?>" data-stock-available="<?php echo intval($item['variant_stock']); ?>">
                                 </td>
                                 <td style="padding:14px 12px; font-weight:700;">NT$ <span data-cart-subtotal><?php echo number_format($subtotal); ?></span></td>
                                 <td style="padding:14px 12px;">
@@ -284,7 +284,7 @@ include 'header.php';
                 <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
                     <div id="cartSelectionNotice" style="display:none; width:100%; padding:10px 12px; border-radius:10px; background:#fff7ed; color:#9a3412; border:1px solid #fdba74; font-size:14px;">請至少勾選一項商品後再前往結帳。</div>
                     <button type="submit" name="action" value="update_cart" style="padding:12px 18px; border:none; border-radius:999px; background:#111; color:#fff; font-weight:700; cursor:pointer;">更新購物車</button>
-                    <button type="submit" name="action" value="checkout" formaction="checkout.php" formmethod="post" style="padding:12px 18px; border:none; border-radius:999px; background:#db6b6b; color:#fff; font-weight:700; cursor:pointer;">前往結帳</button>
+                    <button type="submit" name="action" value="checkout" formaction="checkout.php" formmethod="post" formnovalidate style="padding:12px 18px; border:none; border-radius:999px; background:#db6b6b; color:#fff; font-weight:700; cursor:pointer;">前往結帳</button>
                 </div>
             </div>
         </form>
@@ -363,21 +363,45 @@ include 'header.php';
         if (!isCheckout) {
             return;
         }
-        const hasSelected = rows.some((row) => {
+
+        const selectedRows = rows.filter((row) => {
             const checkbox = row.querySelector('[data-cart-checkbox]');
             return checkbox && checkbox.checked;
         });
-        if (!hasSelected) {
+
+        if (selectedRows.length === 0) {
             event.preventDefault();
             if (selectionNotice) {
                 selectionNotice.style.display = 'block';
+                selectionNotice.textContent = '請至少勾選一項商品後再前往結帳。';
                 selectionNotice.scrollIntoView({ behavior: 'smooth', block: 'center' });
             } else {
                 alert('請至少勾選一項商品後再前往結帳。');
             }
+            return;
+        }
+
+        const hasStockIssue = selectedRows.some((row) => {
+            const qtyInput = row.querySelector('[data-cart-qty]');
+            if (!qtyInput) {
+                return true;
+            }
+            const quantity = Math.max(1, parseInt(qtyInput.value || '1', 10) || 1);
+            const stockAvailable = parseInt(qtyInput.dataset.stockAvailable || qtyInput.getAttribute('data-max-stock') || '0', 10) || 0;
+            return quantity > stockAvailable;
+        });
+
+        if (hasStockIssue) {
+            event.preventDefault();
+            if (selectionNotice) {
+                selectionNotice.style.display = 'block';
+                selectionNotice.textContent = '部分勾選商品庫存不足，請先調整數量再前往結帳。';
+                selectionNotice.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } else {
+                alert('部分勾選商品庫存不足，請先調整數量再前往結帳。');
+            }
         }
     });
-
     recalc();
 })();
 </script>
