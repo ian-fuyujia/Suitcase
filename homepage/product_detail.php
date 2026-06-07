@@ -238,13 +238,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $cartNotice = '只有已送達或已完成訂單的會員可以評論此商品。';
             $cartNoticeType = 'error';
         } else {
-            $reviewStmt = $conn->prepare(
-                'INSERT INTO product_reviews (product_id, user_id, order_id, rating, comment)
-                 VALUES (?, ?, ?, ?, ?)
-                 ON DUPLICATE KEY UPDATE rating = VALUES(rating), comment = VALUES(comment), is_visible = 1'
+            $existingReviewId = 0;
+            $existingReviewStmt = $conn->prepare(
+                'SELECT review_id
+                 FROM product_reviews
+                 WHERE product_id = ? AND user_id = ?
+                 ORDER BY created_at DESC, review_id DESC
+                 LIMIT 1'
             );
+            if ($existingReviewStmt) {
+                $existingReviewStmt->bind_param('ii', $id, $reviewUserId);
+                $existingReviewStmt->execute();
+                $existingReviewRow = $existingReviewStmt->get_result()->fetch_assoc();
+                $existingReviewId = $existingReviewRow ? (int)$existingReviewRow['review_id'] : 0;
+                $existingReviewStmt->close();
+            }
+
+            $reviewStmt = null;
+            if ($existingReviewId > 0) {
+                $reviewStmt = $conn->prepare(
+                    'UPDATE product_reviews
+                     SET rating = ?, comment = ?, is_visible = 1, created_at = CURRENT_TIMESTAMP
+                     WHERE review_id = ?'
+                );
+                if ($reviewStmt) {
+                    $reviewStmt->bind_param('isi', $rating, $comment, $existingReviewId);
+                }
+            } else {
+                $reviewStmt = $conn->prepare(
+                    'INSERT INTO product_reviews (product_id, user_id, order_id, rating, comment)
+                     VALUES (?, ?, ?, ?, ?)'
+                );
+                if ($reviewStmt) {
+                    $reviewStmt->bind_param('iiiis', $id, $reviewUserId, $eligibleOrderId, $rating, $comment);
+                }
+            }
+
             if ($reviewStmt) {
-                $reviewStmt->bind_param('iiiis', $id, $reviewUserId, $eligibleOrderId, $rating, $comment);
                 if ($reviewStmt->execute()) {
                     $cartNotice = '評論已送出，謝謝你的回饋。';
                     $cartNoticeType = 'success';
@@ -729,9 +759,21 @@ $hasExistingReview = false;
 $reviewOrderId = 0;
 if (tableExists($conn, 'product_reviews')) {
     $summaryStmt = $conn->prepare(
-        'SELECT AVG(rating) AS avg_rating, COUNT(*) AS review_count
-         FROM product_reviews
-         WHERE product_id = ? AND is_visible = 1'
+        'SELECT AVG(pr.rating) AS avg_rating, COUNT(*) AS review_count
+         FROM product_reviews pr
+         WHERE pr.product_id = ?
+           AND pr.is_visible = 1
+           AND NOT EXISTS (
+               SELECT 1
+               FROM product_reviews newer
+               WHERE newer.product_id = pr.product_id
+                 AND newer.user_id = pr.user_id
+                 AND newer.is_visible = 1
+                 AND (
+                     newer.created_at > pr.created_at
+                     OR (newer.created_at = pr.created_at AND newer.review_id > pr.review_id)
+                 )
+           )'
     );
     if ($summaryStmt) {
         $summaryStmt->bind_param('i', $id);
@@ -748,7 +790,19 @@ if (tableExists($conn, 'product_reviews')) {
         'SELECT pr.rating, pr.comment, pr.created_at, u.name
          FROM product_reviews pr
          LEFT JOIN users u ON u.user_id = pr.user_id
-         WHERE pr.product_id = ? AND pr.is_visible = 1
+         WHERE pr.product_id = ?
+           AND pr.is_visible = 1
+           AND NOT EXISTS (
+               SELECT 1
+               FROM product_reviews newer
+               WHERE newer.product_id = pr.product_id
+                 AND newer.user_id = pr.user_id
+                 AND newer.is_visible = 1
+                 AND (
+                     newer.created_at > pr.created_at
+                     OR (newer.created_at = pr.created_at AND newer.review_id > pr.review_id)
+                 )
+           )
          ORDER BY pr.created_at DESC, pr.review_id DESC
          LIMIT 8'
     );

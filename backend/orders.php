@@ -193,7 +193,7 @@ if ($orderResult) {
 }
 ?>
 
-<link rel="stylesheet" href="../css/products.css">
+<link rel="stylesheet" href="../css/products.css?v=<?php echo @filemtime(__DIR__ . '/../css/products.css') ?: time(); ?>">
 
 <style>
     .om-layout { display: grid; gap: 18px; }

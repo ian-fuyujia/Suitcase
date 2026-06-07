@@ -755,10 +755,28 @@ $sql_product_reviews = "CREATE TABLE IF NOT EXISTS `product_reviews` (
     `is_visible` TINYINT(1) NOT NULL DEFAULT 1,
     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY `uq_product_review_order_user` (`product_id`, `user_id`, `order_id`),
+    UNIQUE KEY `uq_product_review_product_user` (`product_id`, `user_id`),
     INDEX `idx_product_reviews_product` (`product_id`),
     INDEX `idx_product_reviews_user` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
 $conn->query($sql_product_reviews);
+
+if (tableExists($conn, 'product_reviews')) {
+    if (!indexExists($conn, 'product_reviews', 'uq_product_review_product_user')) {
+        $conn->query(
+            "DELETE old_reviews
+             FROM product_reviews old_reviews
+             JOIN product_reviews newer_reviews
+               ON newer_reviews.product_id = old_reviews.product_id
+              AND newer_reviews.user_id = old_reviews.user_id
+              AND (
+                  newer_reviews.created_at > old_reviews.created_at
+                  OR (newer_reviews.created_at = old_reviews.created_at AND newer_reviews.review_id > old_reviews.review_id)
+              )"
+        );
+        $conn->query("ALTER TABLE `product_reviews` ADD UNIQUE KEY `uq_product_review_product_user` (`product_id`, `user_id`)");
+    }
+}
 
 $sql_admin_audit_logs = "CREATE TABLE IF NOT EXISTS `admin_audit_logs` (
     `log_id` INT AUTO_INCREMENT PRIMARY KEY,
