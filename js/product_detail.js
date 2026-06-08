@@ -56,7 +56,7 @@ function getPriceBreakdown(variant) {
     const original = Number(variant.original_price);
     const specialValue = (variant.special_price !== null && variant.special_price !== '') ? Number(variant.special_price) : null;
     const memberValue = (variant.member_price !== null && variant.member_price !== '') ? Number(variant.member_price) : null;
-    const special = (specialValue !== null && !Number.isNaN(specialValue) && specialValue >= 0) ? specialValue : null;
+    const special = (specialValue !== null && !Number.isNaN(specialValue) && specialValue > 0 && specialValue < original) ? specialValue : null;
     const member = (memberValue !== null && !Number.isNaN(memberValue) && memberValue > 0) ? memberValue : null;
     let headline = original;
     let label = '原價';
@@ -356,20 +356,11 @@ if (favoriteBtn && toast) {
     });
 }
 
-const colorMap = {
-    '黑': '#111827', '黑色': '#111827',
-    '白': '#f9fafb', '白色': '#f9fafb',
-    '灰': '#9ca3af', '灰色': '#9ca3af',
-    '紅': '#ef4444', '紅色': '#ef4444',
-    '藍': '#3b82f6', '藍色': '#3b82f6',
-    '綠': '#10b981', '綠色': '#10b981',
-    '卡其': '#d6b88b',
-    '棕': '#8b5e3c', '棕色': '#8b5e3c',
-    '銀': '#d1d5db', '銀色': '#d1d5db'
-};
+const colorMap = {};
 
 swatches.forEach((swatch) => {
+    const hex = swatch.dataset.colorHex || '';
     const key = swatch.dataset.color || '';
-    const color = colorMap[key] || '#d1d5db';
+    const color = /^#[0-9A-Fa-f]{6}$/.test(hex) ? hex : (colorMap[key] || '#d1d5db');
     swatch.style.background = color;
 });

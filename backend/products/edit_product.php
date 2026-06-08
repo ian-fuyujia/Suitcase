@@ -202,6 +202,10 @@ if (epTableExists($conn, 'inventory_adjustment_logs')) {
                         <div class="pm-col-3">
                             <label>顏色</label>
                             <input class="pm-input sku-color-input" type="text" name="color[]" value="<?= htmlspecialchars($v['color'] ?? '') ?>">
+                            <div class="sku-color-tools">
+                                <input class="sku-color-picker" type="color" value="<?= preg_match('/^#[0-9A-F]{6}$/', isset($v['color_hex']) ? strtoupper(trim((string)$v['color_hex'])) : '') ? htmlspecialchars(strtoupper(trim((string)$v['color_hex']))) : '#111827' ?>" aria-label="選擇色票">
+                                <input class="pm-input sku-color-hex-input" type="text" name="color_hex[]" value="<?= htmlspecialchars(isset($v['color_hex']) ? strtoupper(trim((string)$v['color_hex'])) : '') ?>" placeholder="#111827" maxlength="7" pattern="^#[0-9A-Fa-f]{6}$">
+                            </div>
                         </div>
                         <div class="pm-col-3">
                             <label>原價 (NT$) <span style="color:#ef4444;">*</span></label>
@@ -209,7 +213,8 @@ if (epTableExists($conn, 'inventory_adjustment_logs')) {
                         </div>
                         <div class="pm-col-3">
                             <label>特價 (NT$)</label>
-                            <input class="pm-input" type="number" name="special_price[]" min="0" step="1" value="<?= $v['special_price'] === null ? '' : floatval($v['special_price']) ?>">
+                            <input class="pm-input" type="number" name="special_price[]" min="0" step="1" value="<?= $v['special_price'] === null ? '' : floatval($v['special_price']) ?>" placeholder="留空代表無特價">
+                            <div class="sku-field-help">留空代表無特價；特價需大於 0 且低於原價。</div>
                         </div>
                         <div class="pm-col-3">
                             <label>會員價 (NT$) <span style="color:#ef4444;">*</span></label>

@@ -103,7 +103,11 @@ label { font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 6px; d
 /* 新增商品區塊優化 */
 .pm-section-box { border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
 .pm-section-title { font-size: 16px; font-weight: 600; color: #1e293b; margin: 0 0 12px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
-.pm-sku-row { border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; margin-bottom: 10px; background: #fff; }
+.pm-sku-row { border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; margin-bottom: 12px; background: #fff; }
+.pm-sku-row .pm-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px 16px; align-items: start; }
+.pm-sku-row .pm-col-3 { grid-column: auto; min-width: 0; }
+.pm-sku-row .pm-input { margin-bottom: 0; }
+.sku-field-help { margin-top: 6px; font-size: 12px; color: #64748b; line-height: 1.45; }
 
 /* 檔案上傳區 */
 .pm-file-input {
@@ -127,4 +131,10 @@ label { font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 6px; d
 
 @media (max-width: 960px) {
     .pm-col-3, .pm-col-2 { grid-column: span 12; }
+    .pm-sku-row .pm-grid { grid-template-columns: 1fr; }
+    .pm-sku-row .pm-col-3 { grid-column: auto; }
 }
+
+.sku-color-tools { display: grid; grid-template-columns: 46px minmax(0, 1fr); gap: 8px; align-items: center; margin-top: 8px; }
+.sku-color-tools .sku-color-picker { width: 46px; min-width: 46px; height: 42px; padding: 3px; margin: 0; cursor: pointer; }
+.sku-color-tools .sku-color-hex-input { margin: 0; text-transform: uppercase; font-family: Consolas, monospace; }

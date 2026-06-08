@@ -193,6 +193,7 @@ $sql_vars = "CREATE TABLE IF NOT EXISTS `product_variants` (
     `product_id` INT NOT NULL,
     `sku_code` VARCHAR(50) NOT NULL UNIQUE,
     `color` VARCHAR(50) NULL,
+    `color_hex` VARCHAR(20) NULL,
     `size_inches` VARCHAR(50) NULL,
     `capacity_liters` VARCHAR(50) NULL,
     `original_price` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
@@ -817,6 +818,9 @@ if (!columnExists($conn, 'product_variants', 'special_price')) {
 }
 if (!columnExists($conn, 'product_variants', 'member_price')) {
     $conn->query("ALTER TABLE `product_variants` ADD COLUMN `member_price` DECIMAL(10,2) NOT NULL DEFAULT 0.00 AFTER `special_price`");
+}
+if (!columnExists($conn, 'product_variants', 'color_hex')) {
+    $conn->query("ALTER TABLE `product_variants` ADD COLUMN `color_hex` VARCHAR(20) NULL AFTER `color`");
 }
 if (columnExists($conn, 'product_variants', 'price')) {
     $conn->query("UPDATE `product_variants` SET `original_price` = `price`, `member_price` = `price` WHERE `original_price` = 0.00 AND `member_price` = 0.00");

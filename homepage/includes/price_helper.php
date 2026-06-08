@@ -57,7 +57,7 @@ if (!function_exists('apFetchUserMembershipLevel')) {
 if (!function_exists('apResolveVariantPrice')) {
     function apResolveVariantPrice(array $variant, $isMemberEligible = false) {
         $original = apPriceNumberOrNull($variant['original_price'] ?? null, true);
-        $special = apPriceNumberOrNull($variant['special_price'] ?? null, true);
+        $special = apPriceNumberOrNull($variant['special_price'] ?? null, false);
         $member = apPriceNumberOrNull($variant['member_price'] ?? null, false);
 
         if ($original === null) {
@@ -68,7 +68,7 @@ if (!function_exists('apResolveVariantPrice')) {
             'original' => $original,
         ];
 
-        if ($special !== null) {
+        if ($special !== null && ($original <= 0 || $special < $original)) {
             $candidates['special'] = $special;
         }
 
@@ -111,7 +111,7 @@ if (!function_exists('apVariantPriceSql')) {
         }
         $prefix = $safeAlias . '.';
         $original = "COALESCE({$prefix}original_price, 0)";
-        $special = "CASE WHEN {$prefix}special_price IS NOT NULL AND {$prefix}special_price >= 0 THEN {$prefix}special_price ELSE {$original} END";
+        $special = "CASE WHEN {$prefix}special_price IS NOT NULL AND {$prefix}special_price > 0 AND {$prefix}special_price < {$original} THEN {$prefix}special_price ELSE {$original} END";
         $member = $isMemberEligible
             ? "CASE WHEN {$prefix}member_price IS NOT NULL AND {$prefix}member_price > 0 THEN {$prefix}member_price ELSE {$original} END"
             : $original;

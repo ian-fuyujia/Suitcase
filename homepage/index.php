@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 $pageTitle = 'All Pass 行李箱專賣 | Your All-Access Pass';
 $activeNav = '';
 if (session_status() === PHP_SESSION_NONE) {
@@ -66,10 +66,14 @@ include 'header.php';
              */
                      $imageOrderBy = sfProductImageOrder($conn, 'pi2');
                      $priceSql = apVariantPriceSql('v', $isMemberPriceEligible);
+                     $cardVariantSql = sfProductCardVariantSelectSql($conn, 'v', $isMemberPriceEligible);
                      $sql = "SELECT
                                                 p.product_id,
                                                 p.name,
-                                                MIN({$priceSql}) AS price,
+                                                MIN({$priceSql}) AS display_price,
+                                                COALESCE(SUM(v.stock_available), 0) AS total_stock,
+                                                COUNT(DISTINCT v.variant_id) AS variant_count,
+                                                {$cardVariantSql},
                                                 COALESCE(pi_main.image_url,
                                                         (
                                                                 SELECT pi2.image_url
@@ -91,16 +95,7 @@ include 'header.php';
 
             if ($result && $result->num_rows > 0) {
                 while($row = $result->fetch_assoc()) {
-                    // 點擊卡片跳轉到商品詳情頁 (需帶上 id)
-                    echo '<div class="product-card" onclick="location.href=\'product_detail.php?id=' . $row['product_id'] . '\'">';
-                    echo '  <div class="product-img-wrapper">';
-                    echo '      <img src="../' . htmlspecialchars($row["image_url"]) . '" class="product-img" alt="商品圖片">';
-                    echo '  </div>';
-                    echo '  <div class="product-info">';
-                    echo '      <div class="product-title">' . htmlspecialchars($row["name"]) . '</div>';
-                    echo '      <div class="product-price">NT$ ' . number_format($row["price"]) . '</div>';
-                    echo '  </div>';
-                    echo '</div>';
+                    echo sfRenderProductCard($row, $isMemberPriceEligible);
                 }
             } else {
                 echo "<p style='grid-column: span 3; text-align: center; color: #999;'>目前尚無精選商品，敬請期待！</p>";

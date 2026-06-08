@@ -33,7 +33,7 @@ if (!function_exists('apSyncPromotionPrices')) {
         // 💡 修正：強制使用 original_price 作為折扣計算基準
         $sql = "
             UPDATE product_variants v
-            LEFT JOIN (
+            INNER JOIN (
                 SELECT pp.product_id, p.discount_type, p.discount_value
                 FROM promotions p
                 INNER JOIN promotion_products pp ON pp.promotion_id = p.id
@@ -41,10 +41,9 @@ if (!function_exists('apSyncPromotionPrices')) {
                   AND NOW() BETWEEN p.start_at AND p.end_at
             ) ap ON ap.product_id = v.product_id
             SET v.special_price = CASE
-                WHEN ap.product_id IS NULL THEN NULL
                 WHEN ap.discount_type = 'PERCENT' THEN GREATEST(ROUND(COALESCE(v.original_price, 0) - (COALESCE(v.original_price, 0) * ap.discount_value / 100), 2), 0)
                 WHEN ap.discount_type = 'AMOUNT' THEN GREATEST(ROUND(COALESCE(v.original_price, 0) - ap.discount_value, 2), 0)
-                ELSE NULL
+                ELSE v.special_price
             END
         ";
         if (!$conn->query($sql)) {

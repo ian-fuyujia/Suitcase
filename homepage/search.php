@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 $pageTitle = '商品搜尋 | All Pass';
 $activeNav = '';
 
@@ -45,6 +45,7 @@ $sort = (string)($_GET['sort'] ?? 'newest');
 $currentLevel = !empty($_SESSION['user_id']) ? apFetchUserMembershipLevel($conn, (int)$_SESSION['user_id']) : null;
 $isMemberPriceEligible = apIsMemberPriceEligible($currentLevel);
 $priceSql = apVariantPriceSql('pv', $isMemberPriceEligible);
+$cardVariantSql = sfProductCardVariantSelectSql($conn, 'pv', $isMemberPriceEligible);
 
 $categories = sfFetchCategories($conn);
 $products = [];
@@ -102,6 +103,8 @@ if (searchTableExists($conn, 'products') && searchTableExists($conn, 'product_va
             p.name,
             MIN({$priceSql}) AS display_price,
             COALESCE(SUM(pv.stock_available), 0) AS total_stock,
+            COUNT(DISTINCT pv.variant_id) AS variant_count,
+            {$cardVariantSql},
             COALESCE((
                 SELECT pi.image_url
                 FROM product_images pi
@@ -193,23 +196,7 @@ include 'header.php';
     <?php else: ?>
         <div class="product-grid">
             <?php foreach ($products as $product): ?>
-                <?php $imageUrl = $product['image_url'] !== '' ? '../' . ltrim($product['image_url'], '/') : ''; ?>
-                <a href="product_detail.php?id=<?php echo (int)$product['product_id']; ?>" class="product-card">
-                    <div class="product-img-wrapper">
-                        <?php if ($imageUrl !== ''): ?>
-                            <img src="<?php echo searchH($imageUrl); ?>" alt="<?php echo searchH($product['name']); ?>" class="product-img">
-                        <?php else: ?>
-                            <div style="aspect-ratio:1/1; display:flex; align-items:center; justify-content:center; color:#999;">No Img</div>
-                        <?php endif; ?>
-                    </div>
-                    <div class="product-info">
-                        <h3 class="product-title"><?php echo searchH($product['name']); ?></h3>
-                        <div class="product-price">NT$ <?php echo number_format((float)$product['display_price']); ?></div>
-                        <div style="font-size:12px; color:<?php echo (int)$product['total_stock'] > 0 ? '#64748b' : '#b91c1c'; ?>; margin-top:6px;">
-                            <?php echo (int)$product['total_stock'] > 0 ? '庫存 ' . (int)$product['total_stock'] : '售罄'; ?>
-                        </div>
-                    </div>
-                </a>
+                <?php echo sfRenderProductCard($product, $isMemberPriceEligible); ?>
             <?php endforeach; ?>
         </div>
     <?php endif; ?>

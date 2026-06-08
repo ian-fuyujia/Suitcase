@@ -328,6 +328,7 @@ $variants = [];
 $variantCols = tableColumns($conn, 'product_variants');
 $variantSql = 'SELECT variant_id, sku_code, ' .
     (in_array('color', $variantCols, true) ? 'color' : 'NULL AS color') . ', ' .
+    (in_array('color_hex', $variantCols, true) ? 'color_hex' : 'NULL AS color_hex') . ', ' .
     (in_array('size_inches', $variantCols, true) ? 'size_inches' : 'NULL AS size_inches') . ', ' .
     (in_array('original_price', $variantCols, true) ? 'original_price' : '0 AS original_price') . ', ' .
     (in_array('special_price', $variantCols, true) ? 'special_price' : 'NULL AS special_price') . ', ' .
@@ -347,6 +348,10 @@ $defaultVariant = $variants[0] ?? null;
 foreach ($variants as $v) {
     $variantId = intval($v['variant_id']);
     $variantColor = trim((string)($v['color'] ?? ''));
+    $variantColorHex = strtoupper(trim((string)($v['color_hex'] ?? '')));
+    if (!preg_match('/^#[0-9A-F]{6}$/', $variantColorHex)) {
+        $variantColorHex = sfColorHex($variantColor) ?: '';
+    }
     $variantSize = trim((string)($v['size_inches'] ?? ''));
     $variantSizeLabel = formatSizeLabel($variantSize);
     $variantImage = null;
@@ -362,6 +367,7 @@ foreach ($variants as $v) {
         'size_inches' => $variantSize,
         'size_label' => $variantSizeLabel,
         'color' => $variantColor,
+        'color_hex' => $variantColorHex,
         'original_price' => isset($v['original_price']) ? floatval($v['original_price']) : 0,
         'special_price' => ($v['special_price'] !== null && $v['special_price'] !== '') ? floatval($v['special_price']) : null,
         'member_price' => isset($v['member_price']) ? floatval($v['member_price']) : null,
@@ -382,7 +388,11 @@ if ($defaultVariantData && $defaultVariantData['image_url'] !== '') {
 
 $defaultPrice = null;
 if ($defaultVariantData) {
-    $defaultPrice = ($defaultVariantData['special_price'] !== null && $defaultVariantData['special_price'] !== '')
+    $defaultOriginalForDisplay = (float)($defaultVariantData['original_price'] ?? 0);
+    $defaultSpecialForDisplay = ($defaultVariantData['special_price'] !== null && $defaultVariantData['special_price'] !== '')
+        ? (float)$defaultVariantData['special_price']
+        : null;
+    $defaultPrice = ($defaultSpecialForDisplay !== null && $defaultSpecialForDisplay > 0 && ($defaultOriginalForDisplay <= 0 || $defaultSpecialForDisplay < $defaultOriginalForDisplay))
         ? $defaultVariantData['special_price']
         : $defaultVariantData['original_price'];
 }
@@ -408,6 +418,7 @@ foreach ($variantMap as $variant) {
         if (!isset($colorOptions[$color])) {
             $colorOptions[$color] = [
                 'label' => $color,
+                'hex' => $variant['color_hex'] ?? '',
                 'image_url' => $variant['image_url'] ?? '',
                 'in_stock' => $stock > 0,
             ];
@@ -417,6 +428,9 @@ foreach ($variantMap as $variant) {
             }
             if ($colorOptions[$color]['image_url'] === '' && ($variant['image_url'] ?? '') !== '') {
                 $colorOptions[$color]['image_url'] = $variant['image_url'];
+            }
+            if (($colorOptions[$color]['hex'] ?? '') === '' && ($variant['color_hex'] ?? '') !== '') {
+                $colorOptions[$color]['hex'] = $variant['color_hex'];
             }
         }
     }
@@ -665,6 +679,7 @@ if (tableExists($conn, 'product_category_links')) {
     }
     $relatedImageOrderSql = implode(', ', $relatedImageOrder);
     $relatedPriceSql = apVariantPriceSql('v', $isMemberUser);
+    $relatedCardVariantSql = sfProductCardVariantSelectSql($conn, 'v', $isMemberUser);
 
     if (!empty($categoryIds)) {
         $categoryList = implode(',', array_map('intval', $categoryIds));
@@ -675,7 +690,9 @@ if (tableExists($conn, 'product_category_links')) {
                 p.is_featured,
                 COUNT(DISTINCT pcl_match.category_id) AS match_count,
                 COALESCE(SUM(v.stock_available), 0) AS total_stock,
-                MIN({$relatedPriceSql}) AS price,
+                COUNT(DISTINCT v.variant_id) AS variant_count,
+                MIN({$relatedPriceSql}) AS display_price,
+                {$relatedCardVariantSql},
                 (
                     SELECT pi.image_url
                     FROM product_images pi
@@ -710,7 +727,9 @@ if (tableExists($conn, 'product_category_links')) {
                 p.is_featured,
                 0 AS match_count,
                 COALESCE(SUM(v.stock_available), 0) AS total_stock,
-                MIN({$relatedPriceSql}) AS price,
+                COUNT(DISTINCT v.variant_id) AS variant_count,
+                MIN({$relatedPriceSql}) AS display_price,
+                {$relatedCardVariantSql},
                 (
                     SELECT pi.image_url
                     FROM product_images pi
@@ -970,10 +989,14 @@ include 'header.php';
                                 type="button"
                                 class="chip color-chip color-text-chip<?php echo $opt['in_stock'] ? '' : ' is-disabled'; ?><?php echo ($defaultColor === $color) ? ' is-selected' : ''; ?>"
                                 data-color-option="<?php echo htmlspecialchars($color); ?>"
+                                data-color-hex="<?php echo htmlspecialchars($opt['hex'] ?? ''); ?>"
                                 data-image-url="<?php echo htmlspecialchars($opt['image_url']); ?>"
                                 title="<?php echo htmlspecialchars($color); ?>"
                                 <?php echo $opt['in_stock'] ? '' : 'disabled'; ?>
                             >
+                                <?php if (!empty($opt['hex'])): ?>
+                                    <span class="chip-color-dot" style="background:<?php echo htmlspecialchars($opt['hex']); ?>"></span>
+                                <?php endif; ?>
                                 <?php echo htmlspecialchars($color); ?>
                             </button>
                         <?php endforeach; ?>
@@ -1149,24 +1172,7 @@ include 'header.php';
             </div>
             <div class="related-grid">
                 <?php foreach ($relatedProducts as $related): ?>
-                    <?php
-                    $relatedImage = !empty($related['image_url']) ? '../' . ltrim($related['image_url'], '/') : '';
-                    $relatedPrice = $related['price'] !== null ? (float)$related['price'] : 0;
-                    ?>
-                    <a class="related-product-card" href="product_detail.php?id=<?php echo intval($related['product_id']); ?>">
-                        <div class="related-product-media">
-                            <?php if ($relatedImage !== ''): ?>
-                                <img class="related-product-image" src="<?php echo htmlspecialchars($relatedImage); ?>" alt="<?php echo htmlspecialchars($related['name']); ?>" loading="lazy">
-                            <?php else: ?>
-                                <div class="related-image-placeholder">No Img</div>
-                            <?php endif; ?>
-                        </div>
-                        <div class="related-product-body">
-                            <small><?php echo ((int)$related['match_count'] > 0) ? '同分類推薦' : '你可能也喜歡'; ?></small>
-                            <strong><?php echo htmlspecialchars($related['name']); ?></strong>
-                            <span>NT$ <?php echo number_format($relatedPrice); ?></span>
-                        </div>
-                    </a>
+                    <?php echo sfRenderProductCard($related, $isMemberUser, 'related-product-card'); ?>
                 <?php endforeach; ?>
             </div>
         </section>

@@ -132,8 +132,8 @@ $productSql = "
         COALESCE(SUM(CASE WHEN v.stock_available = 0 THEN 1 ELSE 0 END), 0) AS out_sku_count,
         COALESCE(SUM(CASE WHEN v.stock_available > 0 AND v.stock_available <= {$lowStockThreshold} THEN 1 ELSE 0 END), 0) AS low_sku_count,
         COALESCE(MIN(v.stock_available), 0) AS min_stock,
-        MIN(COALESCE(v.special_price, v.original_price)) AS min_price,
-        MAX(COALESCE(v.special_price, v.original_price)) AS max_price,
+        MIN(CASE WHEN v.special_price IS NOT NULL AND v.special_price > 0 AND v.special_price < v.original_price THEN v.special_price ELSE v.original_price END) AS min_price,
+        MAX(CASE WHEN v.special_price IS NOT NULL AND v.special_price > 0 AND v.special_price < v.original_price THEN v.special_price ELSE v.original_price END) AS max_price,
         GROUP_CONCAT(DISTINCT c.name ORDER BY c.name SEPARATOR ', ') AS category_names,
         (
             SELECT pi.image_url

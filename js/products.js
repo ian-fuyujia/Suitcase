@@ -45,10 +45,38 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
 
+        function normalizeHex(value) {
+            const hex = String(value || '').trim().toUpperCase();
+            return /^#[0-9A-F]{6}$/.test(hex) ? hex : '';
+        }
+
+        function syncColorTools(row) {
+            const scope = row || document;
+            scope.querySelectorAll('.sku-color-tools').forEach(function (tools) {
+                const picker = tools.querySelector('.sku-color-picker');
+                const hexInput = tools.querySelector('.sku-color-hex-input');
+                if (!picker || !hexInput) {
+                    return;
+                }
+                const validHex = normalizeHex(hexInput.value);
+                if (validHex !== '') {
+                    hexInput.value = validHex;
+                    picker.value = validHex;
+                } else {
+                    hexInput.value = '';
+                    picker.value = picker.value || '#111827';
+                }
+            });
+        }
+
         function clearSkuInputs(row) {
             row.querySelectorAll('input, select, textarea').forEach(function (input) {
                 if (input.type === 'checkbox' || input.type === 'radio') {
                     input.checked = false;
+                    return;
+                }
+                if (input.classList.contains('sku-color-picker')) {
+                    input.value = '#111827';
                     return;
                 }
                 if (input.name === 'variant_id[]') {
@@ -75,7 +103,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 // 💡 依照你的要求：複製時不複製「尺寸」與「顏色」，強制清空讓它恢復預設
-                if (targetInput.name === 'size_inches[]' || targetInput.name === 'color[]') {
+                if (targetInput.name === 'size_inches[]' || targetInput.name === 'color[]' || targetInput.name === 'color_hex[]') {
                     targetInput.value = '';
                     return;
                 }
@@ -96,6 +124,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const newRow = templateRow.cloneNode(true);
             cleanSkuRow(newRow);
             clearSkuInputs(newRow);
+            syncColorTools(newRow);
             skuRows.appendChild(newRow);
         });
 
@@ -116,6 +145,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
 
                 sourceRow.after(newRow);
+                syncColorTools(newRow);
                 updateImageColorSelects();
                 return;
             }
@@ -132,10 +162,32 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // 監聽顏色輸入，即時更新圖片顏色選單
         skuRows.addEventListener('input', function(event) {
+            if (event.target.classList.contains('sku-color-picker')) {
+                const tools = event.target.closest('.sku-color-tools');
+                const hexInput = tools ? tools.querySelector('.sku-color-hex-input') : null;
+                if (hexInput) {
+                    hexInput.value = normalizeHex(event.target.value);
+                }
+                return;
+            }
+            if (event.target.classList.contains('sku-color-hex-input')) {
+                const validHex = normalizeHex(event.target.value);
+                if (validHex !== '') {
+                    event.target.value = validHex;
+                    const tools = event.target.closest('.sku-color-tools');
+                    const picker = tools ? tools.querySelector('.sku-color-picker') : null;
+                    if (picker) {
+                        picker.value = validHex;
+                    }
+                }
+                return;
+            }
             if(event.target.classList.contains('sku-color-input')) {
                 updateImageColorSelects();
             }
         });
+
+        syncColorTools(skuRows);
     }
 
     // --- 4. 圖片預覽與顏色選單生成 ---
@@ -221,4 +273,29 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
+
+    function validateSkuSpecialPrice(row) {
+        if (!row) return;
+        const originalInput = row.querySelector('input[name="original_price[]"]');
+        const specialInput = row.querySelector('input[name="special_price[]"]');
+        if (!originalInput || !specialInput) return;
+
+        const original = Number(originalInput.value || '0');
+        const specialRaw = String(specialInput.value || '').trim();
+        let message = '';
+        if (specialRaw !== '') {
+            const special = Number(specialRaw);
+            if (!Number.isFinite(special) || special <= 0 || special >= original) {
+                message = '特價需大於 0 且低於原價；若無特價請留空。';
+            }
+        }
+        specialInput.setCustomValidity(message);
+    }
+
+    document.querySelectorAll('.pm-sku-row').forEach(validateSkuSpecialPrice);
+    document.addEventListener('input', function(event) {
+        if (event.target.matches('input[name="original_price[]"], input[name="special_price[]"]')) {
+            validateSkuSpecialPrice(event.target.closest('.pm-sku-row'));
+        }
+    });
 });

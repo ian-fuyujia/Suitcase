@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 ini_set('display_errors', '0');
 ini_set('display_startup_errors', '0');
 ini_set('log_errors', '1');
@@ -59,6 +59,7 @@ include 'header.php';
             <?php
             $imageOrderBy = sfProductImageOrder($conn, 'pi');
             $priceSql = apVariantPriceSql('v', $isMemberPriceEligible);
+            $cardVariantSql = sfProductCardVariantSelectSql($conn, 'v', $isMemberPriceEligible);
             $categoryWhere = '';
             $categoryJoin = '';
             if ($categoryId > 0) {
@@ -69,7 +70,10 @@ include 'header.php';
             $sql = "SELECT
                         p.product_id,
                         p.name,
-                        MIN({$priceSql}) AS price,
+                        MIN({$priceSql}) AS display_price,
+                        COALESCE(SUM(v.stock_available), 0) AS total_stock,
+                        COUNT(DISTINCT v.variant_id) AS variant_count,
+                        {$cardVariantSql},
                         (
                             SELECT pi.image_url
                             FROM product_images pi
@@ -93,15 +97,7 @@ include 'header.php';
 
             if ($result && $result->num_rows > 0) {
                 while ($row = $result->fetch_assoc()) {
-                    echo '<div class="product-card" onclick="location.href=\'product_detail.php?id=' . $row['product_id'] . '\'">';
-                    echo '  <div class="product-img-wrapper">';
-                    echo '      <img src="../' . htmlspecialchars($row["image_url"]) . '" class="product-img" alt="商品圖片">';
-                    echo '  </div>';
-                    echo '  <div class="product-info">';
-                    echo '      <div class="product-title">' . htmlspecialchars($row["name"]) . '</div>';
-                    echo '      <div class="product-price">NT$ ' . number_format($row["price"]) . '</div>';
-                    echo '  </div>';
-                    echo '</div>';
+                    echo sfRenderProductCard($row, $isMemberPriceEligible);
                 }
             } else {
                 echo '<p class="empty-state">' . ($categoryName !== '' ? '這個分類目前尚無上架商品。' : '目前尚無新品，請稍後再回來看看。') . '</p>';

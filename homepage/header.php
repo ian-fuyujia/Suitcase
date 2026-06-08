@@ -130,13 +130,31 @@ if (isset($conn) && $conn instanceof mysqli && !$conn->connect_error) {
         @media (max-width: 992px) { .product-grid { grid-template-columns: repeat(2, 1fr); } }
         @media (max-width: 576px) { .product-grid { grid-template-columns: 1fr; } }
 
-        .product-card { cursor: pointer; transition: transform 0.3s ease; }
-        .product-img-wrapper { overflow: hidden; position: relative; margin-bottom: 20px; background-color: #f5f5f5; }
+        .product-card { cursor: pointer; transition: transform 0.3s ease; display: block; }
+        .product-card-rich { background: #fff; border-radius: 8px; }
+        .product-img-wrapper { overflow: hidden; position: relative; margin-bottom: 16px; background-color: #f5f5f5; border-radius: 8px; }
         .product-img { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94); display: block; }
+        .product-img-placeholder { display: flex; align-items: center; justify-content: center; color: #9ca3af; font-weight: 700; background: #f3f4f6; }
         .product-card:hover .product-img { transform: scale(1.08); }
         .product-info { text-align: center; }
         .product-title { font-size: 16px; margin-bottom: 10px; color: #333; font-weight: 500; line-height: 1.5; }
-        .product-price { font-size: 17px; font-weight: 700; color: #2c3e50; }
+        .product-price-row { display: flex; align-items: baseline; justify-content: center; gap: 8px; flex-wrap: wrap; }
+        .product-price { font-size: 17px; font-weight: 800; color: #2c3e50; }
+        .product-original-price { color: #9ca3af; font-size: 13px; text-decoration: line-through; }
+        .product-badge-sale,
+        .product-size-badge { position: absolute; left: 12px; z-index: 2; display: inline-flex; align-items: center; justify-content: center; max-width: calc(100% - 24px); padding: 6px 10px; border-radius: 999px; font-size: 12px; font-weight: 800; line-height: 1.25; white-space: nowrap; box-shadow: 0 6px 16px rgba(15,23,42,0.12); }
+        .product-badge-sale { top: 12px; background: #db6b6b; color: #fff; }
+        .product-size-badge { bottom: 12px; background: rgba(255,255,255,0.9); color: #334155; border: 1px solid rgba(148,163,184,0.35); }
+        .product-swatches { display: flex; justify-content: center; align-items: center; gap: 7px; min-height: 24px; margin: 0 0 10px; }
+        .product-swatch { width: 18px; height: 18px; border-radius: 999px; border: 1px solid rgba(15,23,42,0.15); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.45); display: inline-flex; align-items: center; justify-content: center; font-size: 10px; color: #334155; background: #f8fafc; }
+        .product-swatch.is-light { border-color: #cbd5e1; }
+        .product-swatch-more { font-size: 11px; color: #64748b; font-weight: 700; }
+        .product-card-meta { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; font-size: 12px; color: #64748b; }
+        .product-card-meta span { display: inline-flex; align-items: center; min-height: 22px; padding: 3px 8px; border-radius: 999px; background: #f8fafc; border: 1px solid #e5e7eb; white-space: nowrap; }
+        .product-card-meta .is-low { color: #92400e; background: #fffbeb; border-color: #fde68a; }
+        .product-card-meta .is-empty { color: #991b1b; background: #fef2f2; border-color: #fecaca; }
+        .related-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; }
+        .related-product-card { min-width: 0; }
         .empty-state { grid-column: 1 / -1; text-align: center; color: #999; padding: 40px 0; }
 
         .site-footer { border-top: 1px solid #ececec; background: #fff; padding: 24px 5%; color: #777; }
@@ -150,8 +168,10 @@ if (isset($conn) && $conn instanceof mysqli && !$conn->connect_error) {
             .hero-text h1 { font-size: 3rem; letter-spacing: 8px; }
             .hero { height: 80vh; }
             .trust-badges { gap: 24px; flex-wrap: wrap; }
+            .related-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .site-footer-inner { justify-content: center; text-align: center; }
         }
+        @media (max-width: 576px) { .related-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
