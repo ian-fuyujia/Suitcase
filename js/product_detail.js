@@ -197,9 +197,7 @@ function applyVariant(variantId, imageUrl) {
 
     if (variantIdInput) variantIdInput.value = String(variant.variant_id);
     if (selectedSizeElement) {
-        const sizeLabel = variant.size_label || '未設定';
-        const sizeDisplay = variant.size_inches ? ` (${variant.size_inches})` : '';
-        selectedSizeElement.textContent = `${sizeLabel}${sizeDisplay}`;
+        selectedSizeElement.textContent = variant.size_label || variant.size_inches || '未設定';
     }
     if (selectedColorElement) selectedColorElement.textContent = variant.color || '未設定';
     if (selectedPrice) {

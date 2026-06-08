@@ -127,7 +127,7 @@ if ($isVendorAccount && $vendorSupplierId > 0) {
                         <th>商品名稱</th>
                         <th>分類</th>
                         <th>廠商</th>
-                        <th>SKU</th>
+                        <th title="每一組尺寸 / 顏色 / 價格 / 庫存組合是一個 SKU。">規格數</th>
                         <th>價格區間</th>
                         <th>總庫存</th>
                         <th>狀態</th>
@@ -184,7 +184,10 @@ if ($isVendorAccount && $vendorSupplierId > 0) {
                                         <span style="color:#94a3b8;">未指定廠商</span>
                                     <?php endif; ?>
                                 </td>
-                                <td class="pm-nowrap"><?php echo $skuCount; ?></td>
+                                <td class="pm-nowrap">
+                                    <strong><?php echo $skuCount; ?></strong>
+                                    <div style="margin-top:4px; color:#94a3b8; font-size:12px;">SKU</div>
+                                </td>
                                 <td class="pm-nowrap">
                                     <?php if ($row['min_price'] === null): ?>
                                         -

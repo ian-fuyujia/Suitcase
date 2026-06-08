@@ -12,6 +12,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 require_once __DIR__ . '/includes/security.php';
+require_once __DIR__ . '/includes/membership_helper.php';
 
 // 💡 修正 1：確保 PHP 使用台灣時區
 date_default_timezone_set('Asia/Taipei');
@@ -86,6 +87,14 @@ if (tableExists($conn, 'users')) {
 }
 
 $userLevel = $user['membership_level'] !== '' ? $conn->real_escape_string($user['membership_level']) : '一般會員';
+$membershipSync = apApplyMembershipUpgrade($conn, $userId);
+if (!empty($membershipSync['level'])) {
+    $user['membership_level'] = $membershipSync['level'];
+}
+$membershipSpend = (float)($membershipSync['spend'] ?? apMembershipSpend($conn, $userId));
+$vipThresholds = apVipThresholds($conn);
+$membershipProgress = apMembershipProgress($user['membership_level'] ?? '1', $membershipSpend, $conn);
+$userLevel = $conn->real_escape_string((string)($user['membership_level'] ?: '1'));
 
 // ==========================================
 // 💡 處理前端的 POST 請求 (領取與兌換優惠卷)
@@ -359,6 +368,30 @@ include 'header.php';
         </div>
     </div>
 
+    <section style="background:#fff; border:1px solid #eee; border-radius:12px; padding:18px; margin-bottom:24px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap;">
+            <div>
+                <h2 style="font-size:20px; margin:0 0 8px;">會員等級與 VIP 價資格</h2>
+                <p style="color:#666; line-height:1.7; margin:0;">目前等級：<strong><?php echo htmlspecialchars(apMembershipLevelName($user['membership_level'] ?? '1')); ?></strong>，有效累積消費 NT$ <?php echo number_format($membershipSpend); ?>。</p>
+            </div>
+            <?php if (!empty($membershipProgress['next_level'])): ?>
+                <div style="color:#475569; font-size:14px; line-height:1.7;">
+                    距離 <?php echo htmlspecialchars($membershipProgress['next_label']); ?> 還差
+                    <strong>NT$ <?php echo number_format($membershipProgress['remaining']); ?></strong>
+                </div>
+            <?php else: ?>
+                <div style="color:#047857; font-weight:700;">已達最高 VVIP 等級</div>
+            <?php endif; ?>
+        </div>
+        <div style="height:10px; border-radius:999px; background:#f1f5f9; overflow:hidden; margin-top:14px;">
+            <div style="width:<?php echo max(4, min(100, (int)$membershipProgress['percent'])); ?>%; height:100%; background:#db6b6b;"></div>
+        </div>
+        <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-top:10px; color:#64748b; font-size:13px;">
+            <span>VIP：有效累積消費滿 NT$ <?php echo number_format($vipThresholds['2']); ?></span>
+            <span>VVIP：有效累積消費滿 NT$ <?php echo number_format($vipThresholds['3']); ?></span>
+        </div>
+    </section>
+
     <div style="display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:16px;">
         <section style="background:#fff; border:1px solid #eee; border-radius:12px; padding:18px;">
             <h2 style="font-size:20px; margin-bottom:12px;">會員帳號</h2>
@@ -366,7 +399,7 @@ include 'header.php';
                 <div><strong>姓名：</strong><?php echo htmlspecialchars($user['name']); ?></div>
                 <div><strong>Email：</strong><?php echo htmlspecialchars($user['email']); ?></div>
                 <div><strong>電話：</strong><?php echo htmlspecialchars($user['phone']); ?></div>
-                <div><strong>等級：</strong><?php echo htmlspecialchars($user['membership_level'] !== '' ? $user['membership_level'] : '一般會員'); ?></div>
+                <div><strong>等級：</strong><?php echo htmlspecialchars(apMembershipLevelName($user['membership_level'] ?? '1')); ?></div>
                 <div><strong>註冊時間：</strong><?php echo htmlspecialchars($user['created_at']); ?></div>
             </div>
             <div style="margin-top:14px;">

@@ -1,6 +1,7 @@
 <?php
 // system.php - 系統與權限管理獨立內頁
 require_once __DIR__ . '/auth_guard.php';
+require_once __DIR__ . '/../homepage/includes/membership_helper.php';
 
 // 1. 安全防護：強制檢查目前登入的管理者是不是 Super Admin (role_id = 1)
 $current_admin = $_SESSION['admin_username'];
@@ -38,6 +39,8 @@ function sysWriteAdminAudit($conn, $action, $targetType, $targetId, $message) {
     $stmt->execute();
     $stmt->close();
 }
+
+$vipThresholds = apVipThresholds($conn);
 
 // 2. 處理後端 POST 表單提交
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['system_action'])) {
@@ -123,8 +126,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['system_action'])) {
                 $up->close();
             }
         }
+
+        if ($action === 'update_vip_thresholds') {
+            $vipThreshold = (int)($_POST['vip_threshold'] ?? 0);
+            $vvipThreshold = (int)($_POST['vvip_threshold'] ?? 0);
+
+            if ($vipThreshold <= 0 || $vvipThreshold <= $vipThreshold) {
+                $msg = 'VIP 門檻必須大於 0，且 VVIP 門檻必須高於 VIP 門檻。';
+                $msg_type = 'error';
+            } elseif (apSaveVipThresholds($conn, $vipThreshold, $vvipThreshold)) {
+                apSyncMembershipUpgrades($conn);
+                $vipThresholds = apVipThresholds($conn);
+                sysWriteAdminAudit($conn, 'update_vip_thresholds', 'system_settings', null, '更新 VIP / VVIP 升級門檻');
+                $msg = 'VIP / VVIP 升級門檻已更新。既有會員不會自動降級，已退款退貨訂單不計入有效累積消費。';
+            } else {
+                $msg = 'VIP 門檻更新失敗，請確認資料庫設定表已建立。';
+                $msg_type = 'error';
+            }
+        }
     }
 }
+
+$vipThresholds = apVipThresholds($conn);
 
 // 3. 撈取目前所有的管理員清單
 $admins = [];
@@ -360,6 +383,24 @@ $pointRows = sysFetchRows($conn, "
             </div>
 
             <button type="submit" class="alt" style="width:100%; margin-top:8px;">確認配置並發送帳號</button>
+        </form>
+
+        <div style="height:1px; background:#e2e8f0; margin:22px 0;"></div>
+        <h2 class="sys-title">會員等級門檻設定</h2>
+        <form method="POST" style="margin:0;">
+            <?php if (function_exists('apCsrfField')) echo apCsrfField(); ?>
+            <input type="hidden" name="system_action" value="update_vip_thresholds">
+
+            <label style="font-size:13px; font-weight:700; color:#475569;">VIP 升級門檻 (NT$)</label>
+            <input type="number" name="vip_threshold" min="1" step="1" required value="<?php echo (int)$vipThresholds['2']; ?>">
+
+            <label style="font-size:13px; font-weight:700; color:#475569;">VVIP 升級門檻 (NT$)</label>
+            <input type="number" name="vvip_threshold" min="1" step="1" required value="<?php echo (int)$vipThresholds['3']; ?>">
+
+            <p style="margin:8px 0 12px; color:#64748b; font-size:13px; line-height:1.7;">
+                有效累積消費會排除已取消訂單與已退款退貨訂單。調高門檻不會自動降級既有會員；調低門檻會在儲存後同步升級符合資格的會員。
+            </p>
+            <button type="submit" class="alt" style="width:100%; margin-top:8px;">儲存會員門檻</button>
         </form>
     </div>
 </div>

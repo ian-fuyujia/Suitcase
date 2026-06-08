@@ -15,6 +15,34 @@ function epTableExists($conn, $tableName) {
     return $res && $res->num_rows > 0;
 }
 
+function epSizeSortValue($size) {
+    $size = trim((string)$size);
+    if ($size === '') {
+        return 999999;
+    }
+    if (preg_match('/\d+/', $size, $match)) {
+        return (int)$match[0];
+    }
+    return 999999;
+}
+
+function epCompareVariantsBySize($a, $b) {
+    $sizeA = epSizeSortValue($a['size_inches'] ?? '');
+    $sizeB = epSizeSortValue($b['size_inches'] ?? '');
+    if ($sizeA !== $sizeB) {
+        return $sizeA <=> $sizeB;
+    }
+    $rawSizeCompare = strcmp((string)($a['size_inches'] ?? ''), (string)($b['size_inches'] ?? ''));
+    if ($rawSizeCompare !== 0) {
+        return $rawSizeCompare;
+    }
+    $colorCompare = strcmp((string)($a['color'] ?? ''), (string)($b['color'] ?? ''));
+    if ($colorCompare !== 0) {
+        return $colorCompare;
+    }
+    return (int)($a['variant_id'] ?? 0) <=> (int)($b['variant_id'] ?? 0);
+}
+
 // 1. 取得基本資料
 $stmt = $conn->prepare("SELECT * FROM products WHERE product_id = ?");
 $stmt->bind_param("i", $product_id);
@@ -47,6 +75,7 @@ $vStmt->bind_param("i", $product_id);
 $vStmt->execute();
 $vRes = $vStmt->get_result();
 while ($v = $vRes->fetch_assoc()) $variants[] = $v;
+usort($variants, 'epCompareVariantsBySize');
 if (empty($variants)) { 
     $variants[] = [
         'variant_id' => '',
@@ -168,7 +197,7 @@ if (epTableExists($conn, 'inventory_adjustment_logs')) {
             </div>
             <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; padding:12px 14px; border:1px solid #e2e8f0; border-radius:10px; background:#f8fafc; margin-bottom:14px;">
                 <span style="font-weight:700; color:#0f172a;">庫存摘要</span>
-                <span class="pm-badge" style="background:#e2e8f0; color:#334155;">SKU <?php echo $skuCount; ?></span>
+                <span class="pm-badge" style="background:#e2e8f0; color:#334155;" title="每一組尺寸 / 顏色 / 價格 / 庫存組合是一個 SKU。">規格 <?php echo $skuCount; ?></span>
                 <span class="pm-badge" style="background:#dcfce7; color:#166534;">總庫存 <?php echo number_format($totalStock); ?></span>
                 <?php if ($lowSkuCount > 0): ?>
                     <span class="pm-badge" style="background:#fef3c7; color:#92400e;">低庫存 <?php echo $lowSkuCount; ?></span>

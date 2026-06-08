@@ -87,6 +87,23 @@ function odTableColumns($conn, $tableName) {
     return $columns;
 }
 
+function odSizeLabel($size) {
+    $size = preg_replace('/\s+/', '', trim((string)$size));
+    if ($size === '') {
+        return '';
+    }
+    if (preg_match('/^\d+$/', $size)) {
+        return $size . '吋';
+    }
+    if (preg_match('/^\d+(?:\+\d+)+$/', $size)) {
+        return $size . '吋組合';
+    }
+    if (preg_match('/吋/u', $size)) {
+        return preg_replace('/吋+$/u', '吋', $size);
+    }
+    return $size;
+}
+
 $order = null;
 $orderItems = [];
 $returnNotice = '';
@@ -319,7 +336,7 @@ include 'header.php';
                         if ($hasVariantName && isset($item['variant_name']) && trim((string)$item['variant_name']) !== '') {
                             $variantText = trim((string)$item['variant_name']);
                         } else {
-                            $sizeText = trim((string)($item['size_inches'] ?? ''));
+                            $sizeText = odSizeLabel($item['size_inches'] ?? '');
                             $colorText = trim((string)($item['color'] ?? ''));
                             $variantText = trim($sizeText . ($sizeText !== '' && $colorText !== '' ? ' / ' : '') . $colorText);
                         }

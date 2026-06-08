@@ -1,5 +1,8 @@
 <?php
 require_once __DIR__ . '/auth_guard.php';
+require_once __DIR__ . '/../homepage/includes/membership_helper.php';
+
+apSyncMembershipUpgrades($conn);
 
 if (!function_exists('h')) {
     function h($value) {

@@ -195,6 +195,34 @@ if (!function_exists('sfDecodeHexText')) {
     }
 }
 
+if (!function_exists('sfSizeSortValue')) {
+    function sfSizeSortValue($size) {
+        $size = trim((string)$size);
+        if ($size === '') {
+            return 999999;
+        }
+        if (preg_match('/\d+/', $size, $match)) {
+            return (int)$match[0];
+        }
+        return 999999;
+    }
+}
+
+if (!function_exists('sfSortSizeLabels')) {
+    function sfSortSizeLabels(array $sizes) {
+        $values = array_values($sizes);
+        usort($values, function ($a, $b) {
+            $sizeA = sfSizeSortValue($a);
+            $sizeB = sfSizeSortValue($b);
+            if ($sizeA !== $sizeB) {
+                return $sizeA <=> $sizeB;
+            }
+            return strcmp((string)$a, (string)$b);
+        });
+        return $values;
+    }
+}
+
 if (!function_exists('sfProductCardVariantSelectSql')) {
     function sfProductCardVariantSelectSql($conn, $alias = 'v', $isMemberPriceEligible = false) {
         $safeAlias = preg_replace('/[^a-zA-Z0-9_]/', '', $alias);
@@ -348,7 +376,7 @@ if (!function_exists('sfProductCardMeta')) {
             'representative' => $representative,
             'variant_count' => $variantCount,
             'colors' => array_values($colors),
-            'sizes' => array_values($sizes),
+            'sizes' => sfSortSizeLabels($sizes),
             'total_stock' => $totalStock,
             'price' => [
                 'display' => $display,

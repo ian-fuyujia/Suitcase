@@ -40,6 +40,7 @@ require_once __DIR__ . '/includes/promotion_price_sync.php';
 require_once __DIR__ . '/includes/storefront_helpers.php';
 require_once __DIR__ . '/includes/security.php';
 require_once __DIR__ . '/includes/price_helper.php';
+require_once __DIR__ . '/includes/membership_helper.php';
 
 apConfigureErrorHandling();
 
@@ -103,8 +104,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 }
 
 if (!empty($_SESSION['user_id'])) {
+    apApplyMembershipUpgrade($conn, intval($_SESSION['user_id']));
     $currentUserMembershipLevel = apFetchUserMembershipLevel($conn, intval($_SESSION['user_id']));
 }
+$membershipSpend = !empty($_SESSION['user_id']) ? apMembershipSpend($conn, intval($_SESSION['user_id'])) : 0;
+$membershipProgress = apMembershipProgress($currentUserMembershipLevel ?: '1', $membershipSpend, $conn);
 
 function safeQuery($conn, $sql, $tag = '') {
     $res = $conn->query($sql);
@@ -138,21 +142,52 @@ function formatSizeLabel($size) {
         return '';
     }
 
-    if (preg_match('/\d+/', $value, $matches)) {
-        $inches = intval($matches[0]);
-        if ($inches <= 20) {
-            return 'S';
-        }
-        if ($inches <= 23) {
-            return 'M';
-        }
-        if ($inches <= 26) {
-            return 'L';
-        }
-        return 'XL';
+    $value = preg_replace('/\s+/', '', $value);
+    if (preg_match('/^\d+$/', $value)) {
+        return $value . '吋';
+    }
+    if (preg_match('/^\d+(?:\+\d+)+$/', $value)) {
+        return $value . '吋組合';
+    }
+    if (preg_match('/^\d+(?:\+\d+)+吋(?:組合)?$/u', $value)) {
+        return preg_replace('/吋組合$/u', '吋組合', $value);
+    }
+    if (preg_match('/吋/u', $value)) {
+        return preg_replace('/吋+$/u', '吋', $value);
     }
 
-    return strtoupper($value);
+    return $value;
+}
+
+function productDetailSizeSortValue($size) {
+    $size = trim((string)$size);
+    if ($size === '') {
+        return 999999;
+    }
+    if (preg_match('/\d+/', $size, $match)) {
+        return (int)$match[0];
+    }
+    return 999999;
+}
+
+function productDetailCompareVariantsBySize($a, $b) {
+    $sizeA = productDetailSizeSortValue($a['size_inches'] ?? '');
+    $sizeB = productDetailSizeSortValue($b['size_inches'] ?? '');
+    if ($sizeA !== $sizeB) {
+        return $sizeA <=> $sizeB;
+    }
+
+    $rawSizeCompare = strcmp((string)($a['size_inches'] ?? ''), (string)($b['size_inches'] ?? ''));
+    if ($rawSizeCompare !== 0) {
+        return $rawSizeCompare;
+    }
+
+    $colorCompare = strcmp((string)($a['color'] ?? ''), (string)($b['color'] ?? ''));
+    if ($colorCompare !== 0) {
+        return $colorCompare;
+    }
+
+    return (int)($a['variant_id'] ?? 0) <=> (int)($b['variant_id'] ?? 0);
 }
 
 // 取得商品主檔
@@ -342,6 +377,7 @@ if ($r) {
         $variants[] = $row;
     }
 }
+usort($variants, 'productDetailCompareVariantsBySize');
 
 $variantMap = [];
 $defaultVariant = $variants[0] ?? null;
@@ -450,6 +486,7 @@ foreach ($variantMap as $variant) {
 $defaultColor = $defaultVariantData['color'] ?? '';
 $defaultSizeLabel = $defaultVariantData['size_label'] ?? '';
 $defaultSizeDisplay = $defaultVariantData['size_inches'] ?? '';
+$defaultSelectedSizeText = $defaultSizeLabel !== '' ? $defaultSizeLabel : ($defaultSizeDisplay !== '' ? $defaultSizeDisplay : '未設定');
 
 $defaultOriginalPrice = $defaultVariantData ? floatval($defaultVariantData['original_price']) : null;
 $defaultSpecialPrice = ($defaultVariantData && $defaultVariantData['special_price'] !== null && $defaultVariantData['special_price'] !== '')
@@ -976,6 +1013,17 @@ include 'header.php';
                 <?php endif; ?>
             </div>
 
+            <?php if (!$isMemberUser && $defaultMemberPrice !== null): ?>
+                <div class="price-note">
+                    VIP 價 NT$ <?php echo number_format($defaultMemberPrice); ?>。
+                    <?php if (!empty($_SESSION['user_id']) && !empty($membershipProgress['next_level'])): ?>
+                        距離 <?php echo htmlspecialchars($membershipProgress['next_label']); ?> 還差 NT$ <?php echo number_format($membershipProgress['remaining']); ?>。
+                    <?php elseif (empty($_SESSION['user_id'])): ?>
+                        登入會員後可累積消費升級 VIP。
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
+
             <?php if ($cartNotice !== ''): ?>
                 <div class="detail-alert"><?php echo htmlspecialchars($cartNotice); ?></div>
             <?php endif; ?>
@@ -1049,7 +1097,7 @@ include 'header.php';
             <div class="detail-info-box">
                 <h3 style="margin:0 0 12px;">目前選擇的商品資訊</h3>
                 <div style="display:grid; gap:8px; color:#444; line-height:1.7;">
-                    <div>尺寸：<span id="selectedSize"><?php echo htmlspecialchars($defaultSizeLabel !== '' ? $defaultSizeLabel . ($defaultSizeDisplay !== '' ? ' (' . $defaultSizeDisplay . ')' : '') : '未設定'); ?></span></div>
+                    <div>尺寸：<span id="selectedSize"><?php echo htmlspecialchars($defaultSelectedSizeText); ?></span></div>
                     <div>顏色：<span id="selectedColor"><?php echo htmlspecialchars($defaultVariantData['color'] ?? '未設定'); ?></span></div>
                     <div>單價：<span id="selectedPrice"><?php echo $defaultHeadlinePrice !== null ? 'NT$ ' . number_format($defaultHeadlinePrice) : '尚未設定'; ?></span></div>
                     <div>小計：<span id="selectedSubtotal"><?php echo $defaultHeadlinePrice !== null ? 'NT$ ' . number_format($defaultHeadlinePrice) : '尚未設定'; ?></span></div>

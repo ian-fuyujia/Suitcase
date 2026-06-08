@@ -28,6 +28,7 @@ $conn->set_charset('utf8mb4');
 require_once __DIR__ . '/includes/storefront_helpers.php';
 require_once __DIR__ . '/includes/promotion_price_sync.php';
 require_once __DIR__ . '/includes/price_helper.php';
+require_once __DIR__ . '/includes/membership_helper.php';
 
 apRunPromotionSync($conn);
 $currentUserMembershipLevel = apFetchUserMembershipLevel($conn, $userId);
@@ -72,6 +73,23 @@ function checkoutFetchRows($conn, $sql) {
     }
     $res->free();
     return $rows;
+}
+
+function checkoutSizeLabel($size) {
+    $size = preg_replace('/\s+/', '', trim((string)$size));
+    if ($size === '') {
+        return '';
+    }
+    if (preg_match('/^\d+$/', $size)) {
+        return $size . '吋';
+    }
+    if (preg_match('/^\d+(?:\+\d+)+$/', $size)) {
+        return $size . '吋組合';
+    }
+    if (preg_match('/吋/u', $size)) {
+        return preg_replace('/吋+$/u', '吋', $size);
+    }
+    return $size;
 }
 
 function checkoutGenerateOrderNumber($conn) {
@@ -535,7 +553,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 $skuCode = trim((string)$item['sku_code']);
                 $variantColor = trim((string)$item['variant_color']);
                 $variantSize = trim((string)$item['variant_size']);
-                $variantName = trim(($variantSize !== '' ? $variantSize . '吋' : '') . (($variantColor !== '' && $variantSize !== '') ? ' / ' : '') . ($variantColor !== '' ? $variantColor : ''));
+                $variantSizeLabel = checkoutSizeLabel($variantSize);
+                $variantName = trim(($variantSizeLabel !== '' ? $variantSizeLabel : '') . (($variantColor !== '' && $variantSizeLabel !== '') ? ' / ' : '') . ($variantColor !== '' ? $variantColor : ''));
                 $variantId = intval($item['variant_id']);
                 $lockedPrice = $unitPrice;
                 $productId = intval($item['product_id']);
@@ -666,6 +685,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 }
                 $pointStmt->close();
             }
+
+            apApplyMembershipUpgrade($conn, $userId);
 
             $cartIds = array_map('intval', $selectedIds);
             if (!empty($cartIds)) {
@@ -835,7 +856,8 @@ include 'header.php';
                             <?php foreach ($items as $item): ?>
                                 <?php
                                 $imageUrl = $item['image_url'] !== '' ? '../' . ltrim($item['image_url'], '/') : '';
-                                $variantLabel = trim(($item['variant_size'] !== '' ? $item['variant_size'] . '吋' : '') . (($item['variant_color'] !== '' && $item['variant_size'] !== '') ? ' / ' : '') . ($item['variant_color'] !== '' ? $item['variant_color'] : ''));
+                                $sizeLabel = checkoutSizeLabel($item['variant_size']);
+                                $variantLabel = trim(($sizeLabel !== '' ? $sizeLabel : '') . (($item['variant_color'] !== '' && $sizeLabel !== '') ? ' / ' : '') . ($item['variant_color'] !== '' ? $item['variant_color'] : ''));
                                 if ($variantLabel === '') {
                                     $variantLabel = '標準款';
                                 }

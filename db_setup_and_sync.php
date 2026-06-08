@@ -53,6 +53,21 @@ $sql_admin = "CREATE TABLE IF NOT EXISTS `admin_users` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
 $conn->query($sql_admin);
 
+$sql_system_settings = "CREATE TABLE IF NOT EXISTS `system_settings` (
+    `setting_key` VARCHAR(80) NOT NULL PRIMARY KEY,
+    `setting_value` VARCHAR(255) NOT NULL,
+    `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
+$conn->query($sql_system_settings);
+
+if (tableExists($conn, 'system_settings')) {
+    if (!columnExists($conn, 'system_settings', 'updated_at')) {
+        $conn->query("ALTER TABLE `system_settings` ADD COLUMN `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
+    }
+    $conn->query("INSERT INTO `system_settings` (`setting_key`, `setting_value`) VALUES ('vip_threshold', '10000') ON DUPLICATE KEY UPDATE `setting_value` = `setting_value`");
+    $conn->query("INSERT INTO `system_settings` (`setting_key`, `setting_value`) VALUES ('vvip_threshold', '30000') ON DUPLICATE KEY UPDATE `setting_value` = `setting_value`");
+}
+
 // 📁 表格 2：分類 (categories)
 $sql_cat = "CREATE TABLE IF NOT EXISTS `categories` (
     `category_id` INT AUTO_INCREMENT PRIMARY KEY,

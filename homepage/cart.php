@@ -48,6 +48,23 @@ function cartFetchRows($conn, $sql) {
     return $rows;
 }
 
+function cartSizeLabel($size) {
+    $size = preg_replace('/\s+/', '', trim((string)$size));
+    if ($size === '') {
+        return '';
+    }
+    if (preg_match('/^\d+$/', $size)) {
+        return $size . '吋';
+    }
+    if (preg_match('/^\d+(?:\+\d+)+$/', $size)) {
+        return $size . '吋組合';
+    }
+    if (preg_match('/吋/u', $size)) {
+        return preg_replace('/吋+$/u', '吋', $size);
+    }
+    return $size;
+}
+
 if (cartTableExists($conn, 'cart_items')) {
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_item_id'])) {
         apRequireCsrf('cart.php');
@@ -238,7 +255,8 @@ include 'header.php';
                             $displayPrice = floatval($item['display_price']);
                             $subtotal = $displayPrice * intval($item['quantity']);
                             $imageUrl = $item['image_url'] !== '' ? '../' . ltrim($item['image_url'], '/') : '';
-                            $variantLabel = trim(($item['variant_size'] !== '' ? $item['variant_size'] . '吋' : '') . (($item['variant_color'] !== '' && $item['variant_size'] !== '') ? ' / ' : '') . ($item['variant_color'] !== '' ? $item['variant_color'] : ''));
+                            $sizeLabel = cartSizeLabel($item['variant_size']);
+                            $variantLabel = trim(($sizeLabel !== '' ? $sizeLabel : '') . (($item['variant_color'] !== '' && $sizeLabel !== '') ? ' / ' : '') . ($item['variant_color'] !== '' ? $item['variant_color'] : ''));
                             if ($variantLabel === '') {
                                 $variantLabel = '標準款';
                             }

@@ -11,6 +11,23 @@ function h($value) {
     return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
 }
 
+function orderSizeLabel($size) {
+    $size = preg_replace('/\s+/', '', trim((string)$size));
+    if ($size === '') {
+        return '';
+    }
+    if (preg_match('/^\d+$/', $size)) {
+        return $size . '吋';
+    }
+    if (preg_match('/^\d+(?:\+\d+)+$/', $size)) {
+        return $size . '吋組合';
+    }
+    if (preg_match('/吋/u', $size)) {
+        return preg_replace('/吋+$/u', '吋', $size);
+    }
+    return $size;
+}
+
 function orderStatusLabel($status) {
     $labels = [
         'PENDING' => '待處理',
@@ -297,11 +314,11 @@ if ($orderResult) {
             <input type="hidden" name="page" value="orders">
             <div class="pm-grid">
                 <div class="pm-col-3">
-                    <label for="start_date">Start Date</label>
+                    <label for="start_date">開始日期</label>
                     <input class="pm-input" type="date" id="start_date" name="start_date" value="<?php echo h($startDate); ?>">
                 </div>
                 <div class="pm-col-3">
-                    <label for="end_date">End Date</label>
+                    <label for="end_date">結束日期</label>
                     <input class="pm-input" type="date" id="end_date" name="end_date" value="<?php echo h($endDate); ?>">
                 </div>
                 <div class="pm-col-3">
@@ -555,7 +572,12 @@ if ($orderResult) {
                                     <tr>
                                         <td>
                                             <div><?php echo h($item['product_name']); ?></div>
-                                            <div class="om-meta"><?php echo h(($item['size_inches'] ?: '-') . ' / ' . ($item['color'] ?: '-')); ?></div>
+                                            <?php
+                                                $sizeText = orderSizeLabel($item['size_inches'] ?? '');
+                                                $colorText = trim((string)($item['color'] ?? ''));
+                                                $variantText = trim(($sizeText !== '' ? $sizeText : '-') . ' / ' . ($colorText !== '' ? $colorText : '-'));
+                                            ?>
+                                            <div class="om-meta"><?php echo h($variantText); ?></div>
                                         </td>
                                         <td><?php echo h($item['sku_code']); ?></td>
                                         <td><?php echo intval($item['quantity']); ?></td>
