@@ -202,7 +202,7 @@ include 'header.php';
                             <div class="pp-meta">
                                 <span>原價起：NT$ <?php echo number_format($originalPrice); ?></span>
                                 <?php if ($isMemberPriceEligible): ?>
-                                    <span>會員價起：NT$ <?php echo number_format($memberPrice > 0 ? $memberPrice : $originalPrice); ?></span>
+                                    <span>VIP 價起：NT$ <?php echo number_format($memberPrice > 0 ? $memberPrice : $originalPrice); ?></span>
                                 <?php endif; ?>
                                 <span><?php echo ppH($priceLabel); ?>：NT$ <?php echo number_format($discountPrice); ?></span>
                             </div>

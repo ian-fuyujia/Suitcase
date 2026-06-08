@@ -71,7 +71,7 @@ function getPriceBreakdown(variant) {
         }
         headline = Math.min(...candidates);
         if (member !== null && headline === member) {
-            label = '會員價';
+            label = 'VIP 價';
         } else if (special !== null && headline === special) {
             label = '特價';
         }
@@ -124,15 +124,15 @@ function updatePriceUI(variant) {
     if (priceSpecial) priceSpecial.textContent = breakdown.special !== null ? formatPrice(breakdown.special) : '--';
 
     if (priceOriginalRow) priceOriginalRow.classList.toggle('is-hidden', breakdown.label === '原價');
-    if (priceMemberRow) priceMemberRow.classList.toggle('is-hidden', breakdown.label === '會員價' || breakdown.member === null);
+    if (priceMemberRow) priceMemberRow.classList.toggle('is-hidden', breakdown.label === 'VIP 價' || breakdown.member === null);
     if (priceSpecialRow) priceSpecialRow.classList.toggle('is-hidden', breakdown.label === '特價' || breakdown.special === null);
 
     if (priceHint) {
         if (isMemberUser) {
-            if (breakdown.member !== null && breakdown.label === '會員價') {
-                priceHint.textContent = '您已享有專屬會員最優惠。';
+            if (breakdown.member !== null && breakdown.label === 'VIP 價') {
+                priceHint.textContent = '您已享有 VIP 專屬最優惠。';
             } else if (breakdown.member !== null) {
-                priceHint.textContent = '會員價仍可使用：' + formatPrice(breakdown.member);
+                priceHint.textContent = 'VIP 價仍可使用：' + formatPrice(breakdown.member);
             } else {
                 priceHint.textContent = '已顯示目前可用最優惠價格。';
             }
@@ -140,9 +140,9 @@ function updatePriceUI(variant) {
             if (breakdown.special !== null && breakdown.special < breakdown.original) {
                 priceHint.textContent = '活動特惠價：' + formatPrice(breakdown.special);
             } else if (breakdown.member !== null) {
-                priceHint.textContent = '加入會員即可使用會員價：' + formatPrice(breakdown.member);
+                priceHint.textContent = '升級 VIP 後可使用 VIP 價：' + formatPrice(breakdown.member);
             } else {
-                priceHint.textContent = '加入會員即可查看會員價。';
+                priceHint.textContent = '升級 VIP 後可查看 VIP 價。';
             }
         }
     }

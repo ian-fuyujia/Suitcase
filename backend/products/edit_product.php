@@ -217,8 +217,9 @@ if (epTableExists($conn, 'inventory_adjustment_logs')) {
                             <div class="sku-field-help">留空代表無特價；特價需大於 0 且低於原價。</div>
                         </div>
                         <div class="pm-col-3">
-                            <label>會員價 (NT$) <span style="color:#ef4444;">*</span></label>
+                            <label>VIP 價 (NT$) <span style="color:#ef4444;">*</span></label>
                             <input class="pm-input" type="number" name="member_price[]" min="0" step="1" required value="<?= floatval($v['member_price'] ?? 0) ?>">
+                            <div class="sku-field-help">只有 VIP / VVIP 會員會套用此價格。</div>
                         </div>
                         <div class="pm-col-3">
                             <label>庫存數量 <span style="color:#ef4444;">*</span></label>

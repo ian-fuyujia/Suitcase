@@ -265,7 +265,12 @@ include 'header.php';
                                         <div>加入時間：<?php echo htmlspecialchars($item['created_at']); ?></div>
                                     </div>
                                 </td>
-                                <td style="padding:14px 12px; font-weight:700;">NT$ <?php echo number_format($displayPrice); ?></td>
+                                <td style="padding:14px 12px;">
+                                    <div style="font-weight:700;">NT$ <?php echo number_format($displayPrice); ?></div>
+                                    <?php if (!empty($item['price_label']) && $item['price_label'] !== '原價'): ?>
+                                        <div style="margin-top:4px; color:#db6b6b; font-size:12px; font-weight:700;"><?php echo htmlspecialchars($item['price_label']); ?></div>
+                                    <?php endif; ?>
+                                </td>
                                 <td style="padding:14px 12px;">
                                     <input type="number" name="quantities[<?php echo intval($item['cart_item_id']); ?>]" value="<?php echo intval($item['quantity']); ?>" min="1" max="<?php echo max(1, intval($item['variant_stock'])); ?>" style="width:100px; height:40px; border:1px solid #ddd; border-radius:8px; padding:0 10px;" data-cart-qty data-unit-price="<?php echo htmlspecialchars((string)$displayPrice); ?>" data-stock-available="<?php echo intval($item['variant_stock']); ?>">
                                 </td>

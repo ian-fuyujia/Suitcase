@@ -337,7 +337,7 @@ if (!function_exists('sfProductCardMeta')) {
         $suffix = $variantCount > 1 ? '起' : '';
         $label = '';
         if ($isMemberPriceEligible && $member !== null && $member > 0 && $display <= (float)$member && ($original <= 0 || (float)$member < $original)) {
-            $label = '會員價' . $suffix;
+            $label = 'VIP 價' . $suffix;
         } elseif ($special !== null && $special > 0 && $display <= (float)$special && ($original <= 0 || (float)$special < $original)) {
             $label = '特價' . $suffix;
         } elseif ($hasAnySpecial) {

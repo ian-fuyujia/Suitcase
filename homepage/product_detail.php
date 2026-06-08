@@ -941,8 +941,8 @@ include 'header.php';
                     <span>原價</span>
                     <span id="priceOriginal"><?php echo $defaultOriginalPrice !== null ? 'NT$ ' . number_format($defaultOriginalPrice) : '--'; ?></span>
                 </div>
-                <div id="priceMemberRow" class="price-line<?php echo ($defaultHeadlineLabel === '會員價' || $defaultMemberPrice === null) ? ' is-hidden' : ''; ?>">
-                    <span>會員價</span>
+                <div id="priceMemberRow" class="price-line<?php echo ($defaultHeadlineLabel === 'VIP 價' || $defaultMemberPrice === null) ? ' is-hidden' : ''; ?>">
+                    <span>VIP 價</span>
                     <span id="priceMember"><?php echo $defaultMemberPrice !== null ? 'NT$ ' . number_format($defaultMemberPrice) : '--'; ?></span>
                 </div>
                 <div id="priceSpecialRow" class="price-line<?php echo ($defaultHeadlineLabel === '特價' || $defaultSpecialPrice === null) ? ' is-hidden' : ''; ?>">
@@ -957,10 +957,10 @@ include 'header.php';
             <div id="priceHint" class="price-note">
                 <?php if ($defaultVariantData): ?>
                     <?php if ($isMemberUser): ?>
-                        <?php if ($defaultMemberPrice !== null && $defaultHeadlineLabel === '會員價'): ?>
-                            您已享有專屬會員最優惠。
+                        <?php if ($defaultMemberPrice !== null && $defaultHeadlineLabel === 'VIP 價'): ?>
+                            您已享有 VIP 專屬最優惠。
                         <?php elseif ($defaultMemberPrice !== null): ?>
-                            會員價仍可使用：NT$ <?php echo number_format($defaultMemberPrice); ?>
+                            VIP 價仍可使用：NT$ <?php echo number_format($defaultMemberPrice); ?>
                         <?php else: ?>
                             已顯示目前可用最優惠價格。
                         <?php endif; ?>
@@ -968,9 +968,9 @@ include 'header.php';
                         <?php if ($defaultSpecialPrice !== null && $defaultSpecialPrice < $defaultOriginalPrice): ?>
                             活動特惠價：NT$ <?php echo number_format($defaultSpecialPrice); ?>
                         <?php elseif ($defaultMemberPrice !== null): ?>
-                            加入會員即可使用會員價：NT$ <?php echo number_format($defaultMemberPrice); ?>
+                            升級 VIP 後可使用 VIP 價：NT$ <?php echo number_format($defaultMemberPrice); ?>
                         <?php else: ?>
-                            加入會員即可查看會員價。
+                            升級 VIP 後可查看 VIP 價。
                         <?php endif; ?>
                     <?php endif; ?>
                 <?php endif; ?>

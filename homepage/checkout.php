@@ -854,7 +854,12 @@ include 'header.php';
                                             <div>規格：<?php echo htmlspecialchars($variantLabel); ?></div>
                                         </div>
                                     </td>
-                                    <td style="padding:14px 12px; font-weight:700;">NT$ <?php echo number_format(floatval($item['display_price'])); ?></td>
+                                    <td style="padding:14px 12px;">
+                                        <div style="font-weight:700;">NT$ <?php echo number_format(floatval($item['display_price'])); ?></div>
+                                        <?php if (!empty($item['price_label']) && $item['price_label'] !== '原價'): ?>
+                                            <div style="margin-top:4px; color:#db6b6b; font-size:12px; font-weight:700;"><?php echo htmlspecialchars($item['price_label']); ?></div>
+                                        <?php endif; ?>
+                                    </td>
                                     <td style="padding:14px 12px;">x<?php echo intval($item['quantity']); ?></td>
                                     <td style="padding:14px 12px; font-weight:700;">NT$ <?php echo number_format(floatval($item['subtotal'])); ?></td>
                                 </tr>

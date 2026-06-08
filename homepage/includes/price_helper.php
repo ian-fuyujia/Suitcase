@@ -29,7 +29,7 @@ if (!function_exists('apIsMemberPriceEligible')) {
         }
 
         $normalized = strtolower(trim((string)$membershipLevel));
-        return in_array($normalized, ['vip', 'premium', 'member', 'gold', 'silver'], true);
+        return in_array($normalized, ['vip', 'vvip', 'premium', 'gold', 'silver'], true);
     }
 }
 
@@ -88,7 +88,7 @@ if (!function_exists('apResolveVariantPrice')) {
         $labels = [
             'original' => '原價',
             'special' => '特價',
-            'member' => '會員價',
+            'member' => 'VIP 價',
         ];
 
         return [
